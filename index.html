@@ -719,7 +719,7 @@ function drawMap(){bgKitchen();const s=S(),port=s.h>s.w;const hh=44;
   button('lv'+i,x,y,cw,chh-4,'',col,()=>{if(un){sel=i;go('intro')}else if(SAMPLE&&i>=SAMPLE_LEVELS){toastMsg('Sample: levels 1-2. Get the full game to unlock all 7 kitchens!')}else toastMsg('Earn 1 ★ on the level before to unlock')});
   const fs=Math.min(chh*.2,cw*.11);txt(null,(i+1)+'. '+L.n,x+cw/2,y+chh*.24,fs,'#fff',null,cw-14);
   txt(null,un?L.sub:(SAMPLE&&i>=SAMPLE_LEVELS?'🔒 Full game':'🔒 Locked'),x+cw/2,y+chh*.47,fs*.72,'#fff',null,cw-14,{outline:false,bold:false});
-  const st=save.stars[i]||0;txt(null,'★★★'.slice(0,st)+'☆☆☆'.slice(0,3-st),x+cw/2,y+chh*.72,fs*1.15,'#ffe14a',null,cw-14);
+  const st=save.stars[i]||0,ssz=fs*1.25;for(let q=0;q<3;q++)txt(null,'★',x+cw/2+(q-1)*ssz*1.05,y+chh*.72,ssz,q<st?'#ffe14a':'rgba(255,255,255,.35)',null,ssz*1.2,{oc:q<st?'rgba(60,20,10,.85)':'rgba(0,0,0,.25)'});
   if(save.best[i])txt(null,'Best '+save.best[i],x+cw-8,y+chh*.9-2,fs*.6,'#fff','right',cw/2,{outline:false})}
  if(SAMPLE)txt('smp','Sample version: levels 1-2 are free to play',s.l+s.w/2,s.b-14,14,'#fff',null,s.w-20)}
 let TOAST=null;function toastMsg(t){TOAST={t,until:TIME+2.6}}
