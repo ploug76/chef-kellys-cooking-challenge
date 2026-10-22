@@ -982,9 +982,24 @@ function car_awayPath(G,c,thru){const P=G.P,sx=Math.floor(c.x),sy=Math.floor(c.y
  G.sous.forEach(o=>{if(o!==c)block.add(key(Math.floor(o.x),Math.floor(o.y)))});
  while(q.length){const [x,y]=q.shift();if(Math.hypot(x+.5-P.x,y+.5-P.y)>=2.1&&!block.has(key(x,y))){const path=[];let k=key(x,y);while(k!==key(sx,sy)){path.unshift({x:k%100,y:(k/100)|0});k=prev.get(k)}return path}
   for(const [dx,dy] of DIRS){const nx=x+dx,ny=y+dy,nk=key(nx,ny);if(prev.has(nk)||block.has(nk)||!walkable(tileAt(nx,ny)))continue;prev.set(nk,key(x,y));q.push([nx,ny])}}return null}
-function car_unblock(G,dt){const P=G.P;for(const c of G.sous){if(c.gen||c.task||c.stun>0){c.car_b=0;continue}
- c.car_b=Math.hypot(P.x-c.x,P.y-c.y)<1.05?(c.car_b||0)+dt:0;
- if(c.car_b>.7){c.car_b=0;let path=car_awayPath(G,c),thru=false;if(!path||!path.length){path=car_awayPath(G,c,true);thru=true}if(path&&path.length){c.idle=null;c.task='tidy';c.bump=thru?1:0;c.bumped=0;c.gen=(function*(){for(const p of path){let k=0;while(!sousStep(c,p.x,p.y,G.dt)&&k++<150)yield}c.moving=false;c.bump=0})()}}}}
+// sous hops around Kelly (an arc that keeps >=0.62 away, so the engine never shoves her) to the free tile behind her
+function car_hop(G,c){const P=G.P;let ux=c.x-P.x,uy=c.y-P.y;const d=Math.hypot(ux,uy)||1;ux/=d;uy/=d;
+ const occ=(x,y)=>G.sous.some(o=>o!==c&&Math.floor(o.x)===x&&Math.floor(o.y)===y);let tgt=null;
+ for(const k of [1,1.5,2]){const x=Math.floor(P.x-ux*k),y=Math.floor(P.y-uy*k);if(walkable(tileAt(x,y))&&!occ(x,y)&&Math.hypot(x+.5-P.x,y+.5-P.y)>.62){tgt={x,y};break}}
+ if(!tgt)return false;const a0=Math.atan2(uy,ux),side=(Math.floor(G.t*7)%2)?1:-1,R=Math.max(.64,d);c.idle=null;c.task='tidy';c.bump=0;
+ say(c,['Squeeze by!','Hop!','Behind you, Chef!'][c.i%3]);
+ c.gen=(function*(){let k=0;const N=Math.max(6,Math.round(.3/(G.dt||1/60)));for(k=1;k<=N;k++){const a=a0+side*Math.PI*k/N;c.x=G.P.x+Math.cos(a)*R;c.y=G.P.y+Math.sin(a)*R;c.moving=true;c.walk+=.2;yield}
+  let n=0;while(!sousStep(c,tgt.x,tgt.y,G.dt)&&n++<120)yield;c.moving=false})();return true}
+function car_unblock(G,dt){const P=G.P,v=Math.hypot(P.vx||0,P.vy||0);for(const c of G.sous){if(c.gen||c.task||c.stun>0){c.car_b=0;c.car_p=0;continue}
+ const dx=c.x-P.x,dy=c.y-P.y,d=Math.hypot(dx,dy);
+ // Kelly walking into an idle sous: he gets out of the way fast
+ const press=d<.95&&v>1&&((P.vx||0)*dx+(P.vy||0)*dy)/(v*(d||1))>.55;c.car_p=press?(c.car_p||0)+dt:0;
+ c.car_b=d<1.05?(c.car_b||0)+dt:0;
+ if(c.car_p>.25||c.car_b>.7){const pressed=c.car_p>.25;c.car_b=0;c.car_p=0;let path=pressed?null:car_awayPath(G,c);
+  if(pressed){const pth=car_awayPath(G,c);// a side step that doesn't pass in front of Kelly's walking direction
+   if(pth&&pth.length){const e=pth[pth.length-1],ex=e.x+.5-P.x,ey=e.y+.5-P.y;if((P.vx*ex+P.vy*ey)<=0||Math.abs(P.vx*ey-P.vy*ex)/v>.9)path=pth}}
+  if(path&&path.length){c.idle=null;c.task='tidy';c.bump=0;c.bumped=0;c.gen=(function*(){for(const p of path){let k=0;while(!sousStep(c,p.x,p.y,G.dt)&&k++<150)yield}c.moving=false})()}
+  else car_hop(G,c)}}}
 function car_tick(G,dt){car_ringTick(G,dt);car_wind(G,dt);car_carts(G,dt);car_unblock(G,dt)}
 // ---------------------------------------------------------------- art: backdrop, floor, overlays
 function car_ferris(cx,cy,R,time,night){ctx.save();ctx.strokeStyle=night?'#8a7fd0':'#ffffff';ctx.lineWidth=Math.max(2,R*.035);
