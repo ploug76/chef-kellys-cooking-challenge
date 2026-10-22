@@ -57,6 +57,8 @@ const LEVELS=[
   rec:['tsoup','msoup','dburger','pizza','mpizza'],time:240,plates:5,dirty:true,maxO:5,gap:18,first:2,stars:[80,220,360],chop:1.4,burn:.7,
   g:['#d#m#t#c#h#b#','#...~~~~~...W','O...~~~~~...#','#..#<<<<#...R','S..#C#C#S...K','l...........#','O...........#','#.....@.....#','#T#P#E##F#F##']},
 ];
+// burn grace after food is done: 10s on the first 3 levels of each group (time to fetch a plate), 6s later; a level may set warn
+function warnT(){if(!G||!G.L)return WARN_T;const L=G.L;if(L.warn)return L.warn;const gi=LEVELS.filter(l=>(l.group||'classic')===(L.group||'classic')).indexOf(L);return gi<3?10:6}
 const COOK_T={pot:8,pan:6,oven:8},WARN_T=5,FIRE_T=2.5,WASH_T=2.2,CONV_T=1.1;
 let G=null; // current level game state
 let ACT=null; // actor doing the current action (Kelly or a sous chef)
@@ -119,6 +121,7 @@ function canCombine(h,it){if(!h||!it)return false;
  if(h.k==='plate'&&(it.k==='pot'||it.k==='pan'))return it.st==='done'&&it.items.length>0;if((h.k==='pot'||h.k==='pan')&&it.k==='plate')return h.st==='done'&&h.items.length>0;
  if(h.k==='f'&&(it.k==='pot'||it.k==='pan'))return canAddToVessel(it,h.id);if((h.k==='pot'||h.k==='pan')&&it.k==='f')return canAddToVessel(h,it.id);return false}
 function wouldPick(t,h){if(!t||!interactive(t))return false;if(t.fire>0)return false;
+ if(STN[t.t]&&STN[t.t].wouldPick){const r=STN[t.t].wouldPick(t,h);if(r!=null)return !!r}
  if(STN[t.t]){if(!h)return !!((t.pin&&t.pin.length)||t.st==='done'||t.st==='burnt'||(t.it));if(h.k==='plate')return t.st==='done'||(!!t.it&&canCombine(h,t.it));return h.k==='f'?(STN[t.t].proc?procCanAdd(t,h.id):true):canPlace(t,h)}
  if(!h)return !!(t.it||t.t==='crate'||(t.t==='plates'&&t.n>0)||(t.t==='return'&&t.n>0)||(t.t==='sink'&&t.clean>0));
  switch(t.t){case 'trash':return h.k!=='dirty'&&h.k!=='ext';case 'serve':return h.k==='plate'&&h.items.length>0;case 'sink':return h.k==='dirty'||(h.k==='f'&&t.clean>0&&canAddToPlate(mkPlate(),h.id));
@@ -173,7 +176,9 @@ function P_clear(){ACT.hold=null}
 // ---- Chop / use (held) ----
 function doUse(dt){const P=ACT;P.act=0;if(!G||G.done||G.cd>0)return;const h=P.hold;
  if(h&&h.k==='ext'){P.spray+=dt;P.act=2;const d=DIRS[P.dir];
-  for(let k=1;k<=2;k++){const x=Math.floor(P.x+d[0]*(k-0.38)),y=Math.floor(P.y+d[1]*(k-0.38));for(const [ox,oy] of k===2?[[0,0],[d[1],d[0]],[-d[1],-d[0]]]:[[0,0]]){const t=tileAt(x+ox,y+oy);if(t&&t.fire>0){t.fire-=dt*1.6;if(t.fire<=0){t.fire=0;t.fs=0;msg('Fire out!',t.x+.5,t.y+.3,'#9fe8ff')}}}}
+  {const fx=P.fx!=null?P.fx:d[0],fy=P.fy!=null?P.fy:d[1],cx=Math.floor(P.x),cy=Math.floor(P.y);// spray cone: reaches adjacent + diagonal (corner) tiles and one tile further
+   for(let oy=-2;oy<=2;oy++)for(let ox=-2;ox<=2;ox++){const t=tileAt(cx+ox,cy+oy);if(!t||t.fire<=0)continue;const vx=t.x+.5-P.x,vy=t.y+.5-P.y,dd=Math.hypot(vx,vy);if(dd>2.25)continue;const dot=dd<.6?1:(vx*fx+vy*fy)/dd;if(dot<.3)continue;
+    t.fire-=dt*1.6;if(t.fire<=0){t.fire=0;t.fs=0;msg('Fire out!',t.x+.5,t.y+.3,'#9fe8ff')}}}
   if(rnd()<.8)G.parts.push({x:P.x+d[0]*.4,y:P.y+d[1]*.4-.3,vx:d[0]*3+(rnd()-.5),vy:d[1]*3+(rnd()-.5),t:0,life:.5,col:'#eaf6ff',r:.12});
   if((P.spray%0.3)<dt)sfx('spray');return}
  if(h)return;const t=targetTile('use');if(!t||t.fire>0)return;
@@ -211,7 +216,7 @@ function unstick(){const P=G.P;let best=null,bd=1e9;for(const t of G.tiles)if(wa
 // ---- world update ----
 function cookVessel(v,t,dt,kind){if(!v.items.length)return;const full=kind==='oven'?true:vesselFull(v);if(!full)return;
  if(v.st==='raw'){v.p+=dt/COOK_T[kind];if(v.p>=1){v.p=1;v.st='done';if(kind==='oven'){bake(v)}sfx('done');msg(kind==='oven'?'Baked!':kind==='pan'?'Sizzled!':'Soup ready!',t.x+.5,t.y+.2,'#ffe14a')}}
- else if(v.st==='done'){v.ov+=dt/G.burnMul;if(v.ov>WARN_T){v.st='burnt';v.ov=0;if(kind==='oven')v.items=['burnt'];sfx('burn');msg('Burnt!',t.x+.5,t.y+.2,'#ff6a3a')}}
+ else if(v.st==='done'){v.ov+=dt/G.burnMul;if(v.ov>warnT()){v.st='burnt';v.ov=0;if(kind==='oven')v.items=['burnt'];sfx('burn');msg('Burnt!',t.x+.5,t.y+.2,'#ff6a3a')}}
  else if(v.st==='burnt'&&!v.fired){v.ov+=dt;if(rnd()<.2)G.parts.push({x:t.x+.5+(rnd()-.5)*.4,y:t.y+.2,vx:(rnd()-.5)*.4,vy:-.8,t:0,life:1,col:'#333',r:.12});if(v.ov>FIRE_T){v.fired=true;ignite(t)}}}
 function bake(p){const tops=p.items.filter(i=>i!=='dough_c').sort();p.items=['pizza:'+tops.join(',')]}
 function ignite(t){if(t.fire>0||!interactive(t)||t.t==='serve')return;t.fire=1;t.fs=0;sfx('fire');msg('🔥 FIRE!',t.x+.5,t.y,'#ff6a3a')}
@@ -413,12 +418,12 @@ function drawVessel(v,x,y,s,onHeat,time){
  vesselBars(v,x,y,s,time)}
 function vesselBars(v,x,y,s,time){if(v.k==='pot'&&v.st==='raw'&&v.items.length&&v.items.length<3){ctx.fillStyle='#fff';ctx.font='bold '+Math.round(s*.26)+'px system-ui,sans-serif';ctx.textAlign='center';ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.strokeText(v.items.length+'/3',x,y-s*.42);ctx.fillText(v.items.length+'/3',x,y-s*.42)}
  if(v.st==='raw'&&v.p>0)bar(x,y-s*.42,s*.62,v.p,'#5fdc5a');
- if(v.st==='done'&&v.ov>WARN_T*.35&&Math.floor(time*6)%2===0){warnIcon(x,y-s*.5,s)}
- if(v.st==='done'&&v.ov<=WARN_T*.35){ctx.fillStyle='#5fdc5a';ctx.beginPath();ctx.arc(x,y-s*.45,s*.12,0,6.3);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=s*.04;ctx.beginPath();ctx.moveTo(x-s*.06,y-s*.45);ctx.lineTo(x-s*.01,y-s*.4);ctx.lineTo(x+s*.07,y-s*.51);ctx.stroke()}}
+ if(v.st==='done'&&v.ov>warnT()*.35&&Math.floor(time*6)%2===0){warnIcon(x,y-s*.5,s)}
+ if(v.st==='done'&&v.ov<=warnT()*.35){ctx.fillStyle='#5fdc5a';ctx.beginPath();ctx.arc(x,y-s*.45,s*.12,0,6.3);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=s*.04;ctx.beginPath();ctx.moveTo(x-s*.06,y-s*.45);ctx.lineTo(x-s*.01,y-s*.4);ctx.lineTo(x+s*.07,y-s*.51);ctx.stroke()}}
 function warnIcon(x,y,s){ctx.fillStyle='#ff4a2a';ctx.beginPath();ctx.moveTo(x,y-s*.16);ctx.lineTo(x+s*.16,y+s*.12);ctx.lineTo(x-s*.16,y+s*.12);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.font='bold '+Math.round(s*.22)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('!',x,y+s*.02);ctx.textBaseline='alphabetic'}
 function drawItem(it,x,y,s,onHeat,time){if(!it)return;
  if(it.k==='f'){drawFood(it.id,x,y,s);if(it.cp>0)bar(x,y-s*.38,s*.6,it.cp,'#ffb347');return}
- if(it.k==='plate'){drawPlate(it,x,y,s);if(it.st==='done'&&it.ov>WARN_T*.35&&Math.floor(time*6)%2===0)warnIcon(x,y-s*.5,s);return}
+ if(it.k==='plate'){drawPlate(it,x,y,s);if(it.st==='done'&&it.ov>warnT()*.35&&Math.floor(time*6)%2===0)warnIcon(x,y-s*.5,s);return}
  if(it.k==='dirty'){drawDirty(it.n,x,y,s);return}
  if(it.k==='pot'||it.k==='pan'){drawVessel(it,x,y,s,onHeat,time);return}
  if(it.k==='ext'){ctx.fillStyle='#d8262b';rr(x-s*.11,y-s*.32,s*.22,s*.42,s*.08);ctx.fill();ctx.fillStyle='#222';rr(x-s*.06,y-s*.4,s*.12,s*.1,s*.03);ctx.fill();ctx.strokeStyle='#222';ctx.lineWidth=s*.04;ctx.beginPath();ctx.moveTo(x,y-s*.36);ctx.quadraticCurveTo(x+s*.22,y-s*.38,x+s*.2,y-s*.18);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(x-s*.08,y-s*.18,s*.16,s*.07)}}
@@ -440,12 +445,12 @@ function drawTile(t,time){const s=TS,x=KX+t.x*s,y=KY+t.y*s,L=s*.18;
    if(hot){ctx.globalAlpha=.5+.3*Math.sin(time*9);ctx.strokeStyle='#ffb347';ctx.beginPath();ctx.arc(cx,cy,s*.18,0,6.3);ctx.stroke();ctx.globalAlpha=1}ctx.fillStyle='#ff6a2a';ctx.fillRect(x+s*.08,y+s-L+L*.35,s*.12,L*.3);break}
   case 'oven':ctx.fillStyle='#2a1a16';rr(x+s*.12,y-L+s*.22,s*.76,s*.6,s*.1);ctx.fill();{const on=t.it&&t.it.k==='plate'&&t.it.st!=='burnt';ctx.fillStyle=on?'rgba(255,170,60,'+(.55+.25*Math.sin(time*6))+')':'#4a2f28';rr(x+s*.18,y-L+s*.28,s*.64,s*.48,s*.08);ctx.fill()}
    ctx.strokeStyle='#e8c07a';ctx.lineWidth=s*.04;ctx.beginPath();ctx.moveTo(x+s*.25,y+s-L+L*.5);ctx.lineTo(x+s*.75,y+s-L+L*.5);ctx.stroke();break;
-  case 'plates':for(let i=0;i<Math.min(t.n,5);i++){ell(cx,cy+s*.08-i*s*.06,s*.3,s*.2,'#fff');ctx.strokeStyle='#cfd8e0';ctx.lineWidth=1;ctx.stroke()}if(t.n>1)label(String(t.n),x+s*.82,y-L+s*.2,s*.3);if(!t.n){ctx.strokeStyle='rgba(0,0,0,.25)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.ellipse(cx,cy,s*.3,s*.2,0,0,6.3);ctx.stroke();ctx.setLineDash([])}break;
-  case 'serve':ctx.fillStyle='#fff';for(let i=0;i<4;i++)if(i%2===0)ctx.fillRect(x+i*s/4,y+s-L,s/4,L);ctx.fillStyle='#c8462f';ctx.font='bold '+Math.round(s*.2)+'px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('SERVE',cx,cy+s*.33);
+  case 'plates':for(let i=0;i<Math.min(t.n,5);i++){ell(cx,cy+s*.08-i*s*.06,s*.3,s*.2,'#fff');ctx.strokeStyle='#cfd8e0';ctx.lineWidth=1;ctx.stroke()}if(t.n>1)label(String(t.n),x+s*.82,y-L+s*.2,Math.max(15,s*.4));if(!t.n){ctx.strokeStyle='rgba(0,0,0,.25)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.ellipse(cx,cy,s*.3,s*.2,0,0,6.3);ctx.stroke();ctx.setLineDash([])}break;
+  case 'serve':ctx.fillStyle='#fff';for(let i=0;i<4;i++)if(i%2===0)ctx.fillRect(x+i*s/4,y+s-L,s/4,L);label('SERVE',cx,cy+s*.36,Math.max(16,s*.4),'#c8462f');
    ctx.fillStyle='#c9a227';ctx.beginPath();ctx.arc(cx,cy+s*.02,s*.17,Math.PI,0);ctx.fill();ctx.fillRect(cx-s*.22,cy+s*.02,s*.44,s*.05);circ(cx,cy-s*.17,s*.04,'#c9a227');break;
   case 'return':ctx.fillStyle='#8d7f5a';ctx.font='bold '+Math.round(s*.36)+'px system-ui';ctx.textAlign='center';if(!t.n)ctx.fillText('↩',cx,cy+s*.12);else drawDirty(t.n,cx,cy+s*.06,s);break;
   case 'sink':ctx.fillStyle='#7f8c99';rr(x+s*.1,y-L+s*.14,s*.8,s*.56,s*.12);ctx.fill();ctx.fillStyle='#7fc8ec';rr(x+s*.15,y-L+s*.19,s*.7,s*.46,s*.1);ctx.fill();
-   if(t.n)drawDirty(t.n,cx,cy-s*.02,s*.9);if(t.clean){for(let i=0;i<Math.min(3,t.clean);i++){ctx.fillStyle='#fff';ctx.fillRect(x+s*.1+i*s*.12,y+s-L-s*.22,s*.08,s*.22)}label(String(t.clean),x+s*.85,y+s-L-s*.15,s*.28,'#2f9d57')}
+   if(t.n)drawDirty(t.n,cx,cy-s*.02,s*.9);if(t.clean){for(let i=0;i<Math.min(3,t.clean);i++){ctx.fillStyle='#fff';ctx.fillRect(x+s*.1+i*s*.12,y+s-L-s*.22,s*.08,s*.22)}label(String(t.clean),x+s*.85,y+s-L-s*.15,Math.max(15,s*.4),'#2f9d57')}
    if(t.wp>0)bar(cx,y-L-s*.05,s*.62,t.wp,'#7fd6ff');break;
   case 'trash':ctx.fillStyle='#7a838c';rr(cx-s*.24,cy-s*.22,s*.48,s*.5,s*.08);ctx.fill();ctx.fillStyle='#5b636b';rr(cx-s*.28,cy-s*.3,s*.56,s*.12,s*.05);ctx.fill();ctx.strokeStyle='#4a5158';ctx.lineWidth=s*.04;for(const o of [-.1,0,.1]){ctx.beginPath();ctx.moveTo(cx+o*s,cy-s*.12);ctx.lineTo(cx+o*s,cy+s*.2);ctx.stroke()}break;
   case 'crate':ctx.strokeStyle='#80552c';ctx.lineWidth=s*.05;ctx.strokeRect(x+s*.08,y-L+s*.08,s*.84,s*.84);ctx.beginPath();ctx.moveTo(x+s*.08,y-L+s*.5);ctx.lineTo(x+s*.92,y-L+s*.5);ctx.stroke();ell(cx,cy,s*.32,s*.28,'rgba(255,255,255,.55)');drawFood(t.ing,cx,cy,s*1.05);break;
@@ -713,14 +718,14 @@ function extUse(t,dt){const d=STN[t.t],A=ACT;if(d.use&&d.use(t,A,dt)===true)retu
  if(t.p>=1){t.pin=[];t.p=0;t.st='done';t.out=r.out;sfx('pop');burst(t.x+.5,t.y+.4,foodColor(r.out),8)}return true}
 function extTick(t,dt){const d=STN[t.t];if(d.tick)d.tick(t,dt);const P=d.proc;if(!P||P.mode!=='cook')return;
  if(t.st==='idle'){const r=procRule(t);if(!r){t.p=0;return}t.p+=dt/(P.time||6);if(t.p>=1){t.p=1;t.st='done';t.out=r.out;t.pin=[];t.ov=0;sfx('done');msg(P.doneMsg||'Ready!',t.x+.5,t.y+.2,'#ffe14a')}}
- else if(t.st==='done'&&P.burn){t.ov+=dt/G.burnMul;if(t.ov>(P.warn||WARN_T)){t.st='burnt';t.out='burnt';t.ov=0;sfx('burn');msg('Burnt!',t.x+.5,t.y+.2,'#ff6a3a')}}
+ else if(t.st==='done'&&P.burn){t.ov+=dt/G.burnMul;if(t.ov>(P.warn?P.warn*warnT()/WARN_T:warnT())){t.st='burnt';t.out='burnt';t.ov=0;sfx('burn');msg('Burnt!',t.x+.5,t.y+.2,'#ff6a3a')}}
  else if(t.st==='burnt'&&!t.fired){t.ov+=dt;if(Math.random()<.2)G.parts.push({x:t.x+.5+(Math.random()-.5)*.4,y:t.y+.2,vx:0,vy:-.8,t:0,life:1,col:'#333',r:.12});if(t.ov>(P.fireT||FIRE_T)){t.fired=true;ignite(t)}}
  if(t.st==='idle'&&t.p>0&&P.sizzle&&(G.t%0.9)<dt)sfx(P.sizzle)}
 function extDraw(t,x,y,s,time){const d=STN[t.t],L=s*.18,cx=x+s/2,cy=y+s/2-L;
  if(d.draw)d.draw(t,x,y-L,s,time);
  if(d.proc){const pin=t.pin||[];if(t.st==='done'||t.st==='burnt')drawFood(t.out,cx,cy,s*.95);else pin.forEach((id,i)=>drawFood(id,cx+(pin.length>1?(i-(pin.length-1)/2)*s*.22:0),cy,s*.8));
   if(t.st==='idle'&&t.p>0)bar(cx,y-L-s*.05,s*.62,t.p,d.proc.mode==='hold'?'#ffb347':'#5fdc5a');
-  if(t.st==='done'&&d.proc.burn&&t.ov>(d.proc.warn||WARN_T)*.35&&Math.floor(time*6)%2===0)warnIcon(cx,y-L-s*.1,s)}}
+  if(t.st==='done'&&d.proc.burn&&t.ov>(d.proc.warn?d.proc.warn*warnT()/WARN_T:warnT())*.35&&Math.floor(time*6)%2===0)warnIcon(cx,y-L-s*.1,s)}}
 // ---------- sous chef: generic station task ----------
 function* taskStation(c,t){const d=STN[t.t];c.icon=d.icon||'chop';if(d.sous){yield* d.sous(c,t);return}
  if(!d.proc)return say(c,'Hmm?');if(!(yield* goTo(c,t)))return say(c,"Can't reach it!");
@@ -735,11 +740,11 @@ function stationJob(t){const d=STN[t.t];if(!d)return null;if(d.job)return d.job(
 // ---------- generic autoplay bot for extension levels ----------
 function crateFor(id){return findT(t=>t.t==='crate'&&t.ing===id)[0]}
 function producers(m){const out=[];for(const t of G.tiles){const d=STN[t.t];if(!d||!d.proc||t.fire>0)continue;for(const r of d.proc.rules)if(r.out===m)out.push([t,r])}return out}
-function wantedSet(missing){const W=new Set();const add=(m,dep)=>{if(dep>6||W.has(m))return;W.add(m);if(crateFor(m))return;const b=Object.keys(CHOP_TO).find(k=>CHOP_TO[k]===m)||(m.endsWith('_c')?m.slice(0,-2):null);if(b&&CHOPPABLE[b]&&(crateFor(b)||producers(b).length))add(b,dep+1);
+function wantedSet(missing){const W=new Set();const add=(m,dep)=>{if(dep>10||W.has(m))return;W.add(m);if(crateFor(m))return;const b=Object.keys(CHOP_TO).find(k=>CHOP_TO[k]===m)||(m.endsWith('_c')?m.slice(0,-2):null);if(b&&CHOPPABLE[b]&&(crateFor(b)||producers(b).length))add(b,dep+1);
   for(const [t,r] of producers(m))r.in.forEach(i=>add(i,dep+1));for(const d of Object.values(STN))if(d.botWants)d.botWants(m).forEach(i=>add(i,dep+1))};missing.forEach(m=>add(m,0));return W}
 const chopOut=id=>CHOP_TO[id]||id+'_c';
 // plan(m): action to obtain m with empty hands: {t, use:cond} | {wait:true} | null
-function planGet(m,W,dep){if(dep>6)return null;
+function planGet(m,W,dep){if(dep>10)return null;
  const ready=G.tiles.find(t=>t.fire<=0&&((STN[t.t]&&t.st==='done'&&t.out===m)||((t.t==='board'||t.t==='counter')&&t.it&&t.it.k==='f'&&t.it.id===m&&t!==BOT.asm)));if(ready)return{t:ready};
  const cr=crateFor(m);if(cr)return{t:cr};
  for(const d of Object.values(STN))if(d.botPlan){const a=d.botPlan(m,W);if(a)return a}
@@ -1095,6 +1100,276 @@ window.CAR_LEVELS=LV.map((o,i)=>CK.level(car_fit(Object.assign({},BASE,{color:CO
 
 }catch(e){(window.__ERR=window.__ERR||[]).push("p7_carnival.js"+": "+e.message);console.error("p7_carnival.js",e)}
 
+// ---- module p9_cake.js ----
+try{
+// ===== p9_cake.js: Cake Bakery levels (5) for Chef Kelly's Cooking Challenge =====
+// Flow: flour+egg+sugar+butter -> stand mixer (hold Use) -> batter (2 pours) -> pour into a pan
+//  -> cake oven (bakes, then burns -> FIRE) -> cooling rack -> frosting station (hold Use; 2 round layers stack)
+//  -> decoration stations (sprinkles / cherries / candles, hold Use) -> plate -> serve.
+const cake_C=CK.draw;
+const cake_FR={pink:['#ff8cc6','#ffc4e1','#d9558f'],choc:['#7a4426','#a8693f','#4f2a15'],van:['#fff3d2','#fffdf5','#dcc48c']};
+const cake_FRN={pink:'Pink',choc:'Chocolate',van:'Vanilla'};
+const cake_SP='#f2c27a',cake_SPD='#d9974a',cake_SPL='#f9dca5',cake_BAT='#f7e2b0';
+const cake_DECO={s:'Sprinkles',c:'Cherry',k:'Candles'},cake_DORD='sck';
+const cake_SPR=['#ff4d6d','#ffd23a','#4dd2ff','#7ce05a','#b07cff','#ffffff'];
+function cake_id(shape,col,d){return 'ck_'+shape+'_'+col+(d?'_'+d:'')}
+function cake_norm(d){return cake_DORD.split('').filter(ch=>d.includes(ch)).join('')}
+function cake_parse(id){const m=/^ck_(cup|sheet|layer)_(pink|choc|van)(?:_([sck]+))?$/.exec(id);return m?{shape:m[1],col:m[2],d:m[3]||''}:null}
+const cake_now=()=>performance.now()/1000;
+// ---------- art helpers (ctx already at item centre) ----------
+function cake_sprinkles(cx,cy,w,h,n,seed){const ctx=CK.ctx;let q=seed||7;const R=()=>{q=(q*9301+49297)%233280;return q/233280};ctx.lineCap='round';
+ for(let i=0;i<n;i++){const a=R()*6.283,rr=Math.sqrt(R());const x=cx+Math.cos(a)*w*rr,y=cy+Math.sin(a)*h*rr,an=R()*3.14;ctx.strokeStyle=cake_SPR[i%cake_SPR.length];ctx.lineWidth=Math.max(1,w*.09);ctx.beginPath();ctx.moveTo(x-Math.cos(an)*w*.07,y-Math.sin(an)*w*.07);ctx.lineTo(x+Math.cos(an)*w*.07,y+Math.sin(an)*w*.07);ctx.stroke()}}
+function cake_cherry(x,y,r){const ctx=CK.ctx;ctx.strokeStyle='#3f8f2f';ctx.lineWidth=Math.max(1,r*.22);ctx.beginPath();ctx.moveTo(x,y-r*.6);ctx.quadraticCurveTo(x+r*.3,y-r*1.4,x+r*.9,y-r*1.6);ctx.stroke();cake_C.circ(x,y,r,'#e0173a');cake_C.circ(x-r*.35,y-r*.35,r*.3,'rgba(255,255,255,.65)')}
+function cake_candle(x,y,r,col){const ctx=CK.ctx,t=cake_now();const w=r*.55,h=r*1.7;ctx.fillStyle=col||'#7ec8ff';cake_C.rr(x-w/2,y-h,w,h,w*.25);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(1,w*.28);for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(x-w/2,y-h*.2-i*h*.3);ctx.lineTo(x+w/2,y-h*.35-i*h*.3);ctx.stroke()}
+ const fl=1+.12*Math.sin(t*13+x);ctx.fillStyle='#ffb02e';ctx.beginPath();ctx.moveTo(x,y-h-r*1.05*fl);ctx.quadraticCurveTo(x+r*.45,y-h-r*.25,x,y-h-r*.05);ctx.quadraticCurveTo(x-r*.45,y-h-r*.25,x,y-h-r*1.05*fl);ctx.fill();cake_C.circ(x,y-h-r*.32,r*.18,'#fff4a0')}
+function cake_steam(r){const ctx=CK.ctx,t=cake_now();ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=Math.max(1,r*.13);ctx.lineCap='round';for(let i=-1;i<=1;i++){const x=i*r*.6,ph=t*3+i;ctx.beginPath();ctx.moveTo(x,-r*.7);ctx.bezierCurveTo(x+Math.sin(ph)*r*.25,-r*1.0,x-Math.sin(ph)*r*.25,-r*1.25,x+Math.sin(ph+1)*r*.15,-r*1.55);ctx.stroke()}}
+// cupcake: frost color or null
+function cake_cupcake(r,col,d){const ctx=CK.ctx;
+ ctx.fillStyle='#4fb0ea';ctx.beginPath();ctx.moveTo(-r*.95,r*.05);ctx.lineTo(r*.95,r*.05);ctx.lineTo(r*.68,r*.95);ctx.lineTo(-r*.68,r*.95);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='#9bd8fb';ctx.lineWidth=Math.max(1,r*.1);for(let i=-3;i<=3;i++){ctx.beginPath();ctx.moveTo(i*r*.27,r*.1);ctx.lineTo(i*r*.2,r*.9);ctx.stroke()}
+ ctx.fillStyle=cake_SP;ctx.beginPath();ctx.ellipse(0,r*.06,r*.98,r*.5,0,Math.PI,0);ctx.fill();cake_C.ell(-r*.3,-r*.18,r*.25,r*.1,cake_SPL);
+ if(!col)return;const F=cake_FR[col];
+ cake_C.ell(0,-r*.05,r*1.02,r*.36,F[2]);cake_C.ell(0,-r*.12,r*.98,r*.33,F[0]);cake_C.ell(0,-r*.45,r*.74,r*.3,F[2]);cake_C.ell(0,-r*.5,r*.72,r*.28,F[0]);cake_C.ell(0,-r*.8,r*.44,r*.22,F[0]);
+ ctx.fillStyle=F[0];ctx.beginPath();ctx.moveTo(-r*.2,-r*.9);ctx.quadraticCurveTo(0,-r*1.35,r*.12,-r*1.18);ctx.quadraticCurveTo(r*.25,-r*.95,r*.2,-r*.88);ctx.fill();
+ cake_C.ell(-r*.35,-r*.22,r*.28,r*.08,F[1]);cake_C.ell(-r*.2,-r*.58,r*.2,r*.06,F[1]);
+ if(d.includes('s'))cake_sprinkles(0,-r*.4,r*.8,r*.45,12,3);
+ const ch=d.includes('c'),ca=d.includes('k');
+ if(ch&&ca){cake_cherry(-r*.32,-r*.98,r*.26);cake_candle(r*.32,-r*.85,r*.32,'#ff7eb6')}else if(ch)cake_cherry(0,-r*1.12,r*.3);else if(ca)cake_candle(0,-r*.95,r*.36,'#ff7eb6')}
+// sheet cake
+function cake_sheet(r,col,d){const ctx=CK.ctx,F=col?cake_FR[col]:null,w=r*1.35;
+ ctx.fillStyle='rgba(0,0,0,.15)';cake_C.ell(0,r*.85,w*1.02,r*.18);ctx.fill();
+ ctx.fillStyle=F?F[2]:cake_SPD;cake_C.rr(-w,-r*.15,w*2,r*.95,r*.12);ctx.fill();
+ if(!F){ctx.fillStyle=cake_BAT;ctx.fillRect(-w,r*.28,w*2,r*.1)}
+ ctx.fillStyle=F?F[0]:cake_SP;ctx.beginPath();ctx.moveTo(-w,-r*.15);ctx.lineTo(-w*.82,-r*.72);ctx.lineTo(w*.82,-r*.72);ctx.lineTo(w,-r*.15);ctx.closePath();ctx.fill();
+ if(F){for(let i=0;i<7;i++){const x=-w+w*2*(i+.5)/7;cake_C.ell(x,-r*.12,w*.15,r*.13,F[0])}for(let i=0;i<5;i++){const x=-w*.8+w*1.6*(i+.5)/5;ctx.fillStyle=F[0];cake_C.rr(x-r*.08,-r*.15,r*.16,r*(.3+.18*((i*7)%3)),r*.08);ctx.fill()}
+  cake_C.ell(-w*.4,-r*.5,w*.3,r*.07,F[1])}else cake_C.ell(-w*.35,-r*.5,w*.3,r*.07,cake_SPL);
+ if(d.includes('s'))cake_sprinkles(0,-r*.44,w*.78,r*.22,16,5);
+ const ch=d.includes('c'),ca=d.includes('k');
+ if(ch)for(const x of ca?[-.62,.62]:[-.55,0,.55])cake_cherry(x*w,-r*.45,r*.22);
+ if(ca)for(const x of ch?[-.2,.2]:[-.5,0,.5])cake_candle(x*w,-r*.4,r*.28,['#7ec8ff','#ff7eb6','#ffd23a'][Math.round(x*4+4)%3])}
+// round layer pieces
+function cake_cyl(cx,top,bot,rx,ry,side,topc){const ctx=CK.ctx;ctx.fillStyle=side;ctx.fillRect(cx-rx,top,rx*2,bot-top);cake_C.ell(cx,bot,rx,ry,side);cake_C.ell(cx,top,rx,ry,topc)}
+function cake_round(r,n){const rx=r*1.05,ry=r*.3;if(n===1){CK.ctx.fillStyle='rgba(0,0,0,.15)';cake_C.ell(0,r*.62,rx*1.02,ry);CK.ctx.fill();cake_cyl(0,-r*.05,r*.5,rx,ry,cake_SPD,cake_SP);cake_C.ell(-r*.35,-r*.1,r*.3,r*.07,cake_SPL);return}
+ CK.ctx.fillStyle='rgba(0,0,0,.15)';cake_C.ell(0,r*.9,rx*1.02,ry);CK.ctx.fill();cake_cyl(0,r*.3,r*.8,rx,ry,cake_SPD,cake_SP);cake_C.ell(0,r*.3,rx,ry,cake_BAT);cake_cyl(0,-r*.32,r*.22,rx,ry,cake_SPD,cake_SP);cake_C.ell(-r*.35,-r*.36,r*.3,r*.07,cake_SPL)}
+function cake_layer(r,col,d){const ctx=CK.ctx,F=cake_FR[col],rx=r*1.08,ry=r*.3,top=-r*.55,bot=r*.75;
+ ctx.fillStyle='rgba(0,0,0,.15)';cake_C.ell(0,bot+r*.12,rx*1.04,ry);ctx.fill();cake_cyl(0,top,bot,rx,ry,F[2],F[0]);
+ ctx.fillStyle=F[0];for(let i=0;i<6;i++){const x=-rx+rx*2*(i+.5)/6;cake_C.rr(x-r*.09,top,r*.18,r*(.35+.2*((i*5)%3)),r*.09);ctx.fill()}
+ for(let i=0;i<8;i++){const x=-rx*.92+rx*1.84*i/7;cake_C.circ(x,r*.12+Math.abs(x)/rx*r*.06,r*.1,F[1])}
+ for(let i=0;i<8;i++){const x=-rx*.92+rx*1.84*i/7;cake_C.circ(x,bot+r*.02+Math.abs(x)/rx*r*.06,r*.1,F[0])}
+ cake_C.ell(-r*.4,top-r*.02,r*.35,r*.08,F[1]);
+ if(d.includes('s'))cake_sprinkles(0,top,rx*.8,ry*.8,14,9);
+ const ch=d.includes('c'),ca=d.includes('k');
+ if(ch)for(const x of ca?[-.6,.6]:[-.55,0,.55])cake_cherry(x*rx,top+r*.02,r*.22);
+ if(ca)for(const x of ch?[-.2,.2]:[-.45,0,.45])cake_candle(x*rx,top+r*.06,r*.28,['#7ec8ff','#ff7eb6','#ffd23a'][Math.round(x*4+4)%3])}
+function cake_tin(r,shape,fill,hot){const ctx=CK.ctx;
+ if(shape==='cup'){ctx.fillStyle='#8a96a3';cake_C.rr(-r*1.25,-r*.65,r*2.5,r*1.35,r*.25);ctx.fill();ctx.fillStyle='#aab4bf';cake_C.rr(-r*1.15,-r*.58,r*2.3,r*1.2,r*.2);ctx.fill();
+  for(let j=0;j<2;j++)for(let i=0;i<3;i++){const x=(i-1)*r*.74,y=(j-.5)*r*.6;cake_C.ell(x,y,r*.31,r*.25,'#6c7783');if(fill==='bat')cake_C.ell(x,y+r*.02,r*.25,r*.19,cake_BAT);else if(fill==='baked'){cake_C.ell(x,y-r*.02,r*.3,r*.25,cake_SP);cake_C.ell(x-r*.08,y-r*.1,r*.12,r*.06,cake_SPL)}}}
+ else if(shape==='sheet'){ctx.fillStyle='#7e8a97';cake_C.rr(-r*1.35,-r*.6,r*2.7,r*1.3,r*.12);ctx.fill();ctx.fillStyle='#aab4bf';cake_C.rr(-r*1.25,-r*.52,r*2.5,r*1.14,r*.1);ctx.fill();
+  if(fill){ctx.fillStyle=fill==='bat'?cake_BAT:cake_SP;cake_C.rr(-r*1.12,-r*.42,r*2.24,r*.95,r*.1);ctx.fill();if(fill==='baked')cake_C.ell(-r*.4,-r*.2,r*.45,r*.1,cake_SPL);else{ctx.strokeStyle='#efd08f';ctx.lineWidth=Math.max(1,r*.07);ctx.beginPath();ctx.moveTo(-r*.7,0);ctx.quadraticCurveTo(0,-r*.3,r*.7,0);ctx.stroke()}}}
+ else{cake_C.ell(0,r*.12,r*1.12,r*.78,'#6c7783');cake_C.ell(0,0,r*1.12,r*.75,'#aab4bf');cake_C.ell(0,0,r*.95,r*.62,'#8a96a3');
+  if(fill==='bat'){cake_C.ell(0,0,r*.9,r*.58,cake_BAT);CK.ctx.strokeStyle='#efd08f';CK.ctx.lineWidth=Math.max(1,r*.07);CK.ctx.beginPath();CK.ctx.arc(0,0,r*.4,.3,3.6);CK.ctx.stroke()}else if(fill==='baked'){cake_C.ell(0,-r*.04,r*.92,r*.6,cake_SP);cake_C.ell(-r*.3,-r*.22,r*.35,r*.1,cake_SPL)}}
+ if(hot)cake_steam(r)}
+// ---------- foods ----------
+CK.addFood('flour',{name:'Flour',color:'#f3ece0',draw(x,y,s,r){r*=1.3;const ctx=CK.ctx;ctx.fillStyle='#efe6d4';cake_C.rr(-r*.8,-r*.75,r*1.6,r*1.6,r*.35);ctx.fill();ctx.strokeStyle='#cbbd9f';ctx.lineWidth=Math.max(1,r*.08);ctx.stroke();
+ ctx.fillStyle='#e8dcc2';ctx.beginPath();ctx.moveTo(-r*.55,-r*.75);ctx.lineTo(-r*.2,-r*1.1);ctx.lineTo(r*.2,-r*1.1);ctx.lineTo(r*.55,-r*.75);ctx.fill();ctx.fillStyle='#4a90d9';ctx.fillRect(-r*.8,-r*.05,r*1.6,r*.38);
+ ctx.strokeStyle='#d9a441';ctx.lineWidth=Math.max(1,r*.1);ctx.beginPath();ctx.moveTo(0,-r*.2);ctx.lineTo(0,-r*.65);ctx.stroke();for(const k of [-1,1])for(let i=0;i<3;i++){cake_C.ell(k*r*.12,-r*.3-i*r*.14,r*.1,r*.05,'#e0b24f')}cake_C.circ(r*.75,-r*.85,r*.18,'rgba(255,255,255,.85)');cake_C.circ(r*.95,-r*.65,r*.12,'rgba(255,255,255,.7)')}});
+CK.addFood('egg',{name:'Eggs',color:'#fff8ec',draw(x,y,s,r){r*=1.3;const ctx=CK.ctx;for(const [ex,ey,c] of [[-.38,.1,'#f0d2ad'],[.38,.05,'#fffaf2']]){cake_C.ell(ex*r,ey*r,r*.5,r*.66,c);ctx.strokeStyle='#d8c3a0';ctx.lineWidth=Math.max(1,r*.06);ctx.stroke();cake_C.ell(ex*r-r*.15,ey*r-r*.25,r*.12,r*.18,'rgba(255,255,255,.8)')}}});
+CK.addFood('sugar',{name:'Sugar',color:'#ffffff',draw(x,y,s,r){r*=1.3;const ctx=CK.ctx;const cube=(cx,cy,k)=>{ctx.fillStyle='#ffffff';cake_C.rr(cx-k,cy-k,k*2,k*2,k*.25);ctx.fill();ctx.strokeStyle='#9cc3e6';ctx.lineWidth=Math.max(1,k*.15);ctx.stroke();ctx.fillStyle='#e6f1fb';ctx.fillRect(cx-k*.7,cy+k*.2,k*1.4,k*.5)};
+ cube(-r*.45,r*.3,r*.42);cube(r*.45,r*.3,r*.42);cube(0,-r*.42,r*.42);ctx.fillStyle='#fff6a0';for(const [a,b] of [[.85,-.75],[-.85,-.6]]){ctx.beginPath();ctx.moveTo(a*r,b*r-r*.22);ctx.lineTo(a*r+r*.07,b*r);ctx.lineTo(a*r,b*r+r*.22);ctx.lineTo(a*r-r*.07,b*r);ctx.fill()}}});
+CK.addFood('butter',{name:'Butter',color:'#ffe27a',draw(x,y,s,r){r*=1.3;const ctx=CK.ctx;ctx.fillStyle='#dbe9ff';cake_C.rr(-r*1.05,-r*.35,r*2.1,r*.95,r*.12);ctx.fill();ctx.fillStyle='#ffe27a';cake_C.rr(-r*.85,-r*.55,r*1.7,r*.8,r*.15);ctx.fill();ctx.fillStyle='#fff2b0';cake_C.rr(-r*.85,-r*.55,r*1.7,r*.22,r*.1);ctx.fill();ctx.strokeStyle='#e0b83a';ctx.lineWidth=Math.max(1,r*.07);ctx.beginPath();ctx.moveTo(r*.35,-r*.55);ctx.lineTo(r*.35,r*.25);ctx.stroke()}});
+CK.addFood('batter',{name:'Batter',color:cake_BAT,draw(x,y,s,r){r*=1.3;const ctx=CK.ctx;cake_C.ell(0,-r*.2,r*1.05,r*.42,'#5fb0e0');ctx.fillStyle='#7fc8ec';ctx.beginPath();ctx.ellipse(0,-r*.2,r*1.05,r*1.0,0,0,Math.PI);ctx.fill();cake_C.ell(0,-r*.2,r*.9,r*.32,cake_BAT);
+ ctx.strokeStyle='#e8c47c';ctx.lineWidth=Math.max(1,r*.08);ctx.beginPath();ctx.arc(0,-r*.2,r*.4,.4,3.2);ctx.stroke();ctx.strokeStyle='#bfc7cf';ctx.lineWidth=Math.max(1,r*.1);ctx.beginPath();ctx.moveTo(r*.25,-r*.3);ctx.lineTo(r*.9,-r*1.1);ctx.stroke();cake_C.ell(r*.2,-r*.35,r*.16,r*.1,'#bfc7cf')}});
+for(const sh of ['cup','sheet','round']){
+ CK.addFood('tin_'+sh,{name:'Cake pan',color:cake_BAT,draw(x,y,s,r){cake_tin(r*1.3,sh,'bat',false)}});
+ CK.addFood('hot_'+sh,{name:'Hot cake',color:cake_SP,draw(x,y,s,r){cake_tin(r*1.3,sh,'baked',true)}})}
+CK.addFood('cake_cup',{name:'Cupcakes',color:cake_SP,draw(x,y,s,r){r*=1.35;cake_cupcake(r,null,'')}});
+CK.addFood('cake_sheet',{name:'Sheet cake',color:cake_SP,draw(x,y,s,r){r*=1.35;cake_sheet(r,null,'')}});
+CK.addFood('cake_round',{name:'Cake layer',color:cake_SP,draw(x,y,s,r){r*=1.35;cake_round(r,1)}});
+CK.addFood('stack2',{name:'Stacked layers',color:cake_SP,draw(x,y,s,r){r*=1.35;cake_round(r,2)}});
+const cake_SUBS=['','s','c','k','sc','sk','ck','sck'];
+for(const sh of ['cup','sheet','layer'])for(const col of ['pink','choc','van'])for(const d of cake_SUBS){const id=cake_id(sh,col,d);
+ CK.addFood(id,{name:cake_FRN[col]+' '+sh,color:cake_FR[col][0],draw(x,y,s,r){r*=1.42;if(sh==='cup')cake_cupcake(r,col,d);else if(sh==='sheet')cake_sheet(r,col,d);else cake_layer(r,col,d)}})}
+// ---------- recipes ----------
+const cake_SHN={cup:'Cupcake',sheet:'Sheet Cake',layer:'Layer Cake'},cake_BASE={cup:[40,105],sheet:[55,125],layer:[80,165]};
+function cake_rec(shape,col,d){const id=cake_id(shape,col,d),k='ck_'+shape+'_'+col+'_'+(d||'x');if(RECIPES[k])return k;
+ // short ticket names (frosting colour shows in the picture; decorations are named)
+ const nm=(d.length>=3?'Deluxe':d.length===2?'Party':d.length===1?{s:'Sprinkle',c:'Cherry',k:'Candle'}[d]:{pink:'Pink',choc:'Choc',van:'Vanilla'}[col])+' '+(d.length&&shape!=='cup'?{sheet:'Sheet',layer:'Layer'}[shape]:cake_SHN[shape]);// short names: intro chips are ~80px
+ const b=cake_BASE[shape];CK.recipe(k,{n:nm,need:[id],pts:b[0]+10*d.length,time:b[1]+8*d.length});return k}
+// ---------- stations ----------
+const cake_hintT={};
+function cake_hint(t,text){const k=t.x+','+t.y;if((cake_hintT[k]||-9)>G.t-1.2)return;cake_hintT[k]=G.t;CK.msg(text,t.x+.5,t.y-.1,'#ffd84a')}
+function cake_badge(txt,x,y,s,bg){CK.draw.label(txt,x,y,Math.max(16,s*.4),bg)}
+const cake_BATIN=['butter','egg','flour','sugar'];
+// stand mixer
+CK.station('ck_mixer',{colors:['#bfeee6','#5fb8a8'],icon:'chop',
+ proc:{rules:[{in:cake_BATIN.slice(),out:'batter'}],mode:'hold',time:2.4,cap:4,sfx:'chop'},
+ tick(t){if(t.st==='done'){if(t.pours==null)t.pours=2}else t.pours=null},
+ pick(t,A){const h=A.hold;
+  if(!h&&t.st==='done'&&t.out==='batter'){A.hold=CK.mk('batter');t.pours=(t.pours||2)-1;if(t.pours<=0){procReset(t);t.pours=null}CK.sfx('pick');return true}
+  if(h&&h.k==='f'&&t.st==='idle'&&!procCanAdd(t,h.id)){cake_hint(t,cake_BATIN.includes(h.id)?'Already in the bowl!':'Batter needs flour, eggs, sugar, butter');CK.sfx('buzz');return true}
+  if(h&&h.k==='plate'&&t.st==='done'){cake_hint(t,'Pour the batter into a pan!');CK.sfx('buzz');return true}
+  if(h&&h.k==='f'&&t.st==='done'){cake_hint(t,'Take the batter out first');CK.sfx('buzz');return true}
+  return false},
+ use(t,A,dt){if(t.st==='idle'&&(t.pin||[]).length&&!procRule(t)){cake_hint(t,(4-t.pin.length)+' more ingredient'+(t.pin.length===3?'':'s')+'!');return true}return false},
+ job(t){return t.st==='idle'&&(t.pin||[]).length>0?'station':null},
+ *sous(c,t){yield* cake_sousMixer(c,t)},
+ botPlan(m,W){return cake_botDeco(m,W)},
+ botRoute(h,W){if(h.k==='f'&&cake_BATIN.includes(h.id)&&G.L.group==='cake'){const mx=findT(q=>q.t==='ck_mixer'&&q.fire<=0&&procCanAdd(q,h.id))[0];if(mx)return mx}return null},
+ draw(t,x,y,s,time){const ctx=CK.ctx,cx=x+s/2,cy=y+s/2,spin=t.st==='idle'&&t.p>0;
+  ctx.fillStyle='#e85d8a';cake_C.rr(x+s*.12,y+s*.72,s*.76,s*.14,s*.05);ctx.fill();ctx.fillStyle='#ff7aa8';cake_C.rr(x+s*.68,y+s*.18,s*.16,s*.62,s*.06);ctx.fill();cake_C.rr(x+s*.22,y+s*.08,s*.62,s*.2,s*.1);ctx.fill();
+  cake_C.circ(x+s*.3,y+s*.18,s*.05,'#fff');ctx.fillStyle='#d9dee4';ctx.beginPath();ctx.ellipse(cx-s*.06,cy+s*.08,s*.3,s*.22,0,0,Math.PI);ctx.fill();cake_C.ell(cx-s*.06,cy+s*.08,s*.3,s*.08,'#eef2f5');
+  ctx.strokeStyle='#8a96a3';ctx.lineWidth=Math.max(1,s*.04);const a=spin?time*25:0;ctx.beginPath();ctx.moveTo(cx-s*.06,y+s*.28);ctx.lineTo(cx-s*.06+Math.sin(a)*s*.08,cy+s*.06);ctx.stroke();
+  const n=(t.pin||[]).length;if(t.st==='idle'&&n>0&&n<4)cake_badge(n+'/4',cx,y-s*.12,s,'#3a8f7f');if(t.st==='done'&&t.pours)cake_badge('×'+t.pours,x+s*.82,y+s*.15,s,'#e0439a')}});
+// pans: drop batter = instant pour
+for(const sh of ['cup','sheet','round'])CK.station('ck_pan_'+sh,{colors:['#e6ebf0','#9aa7b5'],icon:'fetch',
+ proc:{rules:[{in:['batter'],out:'tin_'+sh}],mode:'hold',time:.5,cap:1},
+ pick(t,A){const h=A.hold;if(h&&h.k==='f'&&h.id==='batter'&&t.st==='idle'&&!(t.pin||[]).length){A.hold=null;t.st='done';t.out='tin_'+sh;t.pin=[];CK.sfx('drop');CK.burst(t.x+.5,t.y+.3,cake_BAT,8);return true}
+  if(h&&h.k==='f'&&t.st==='idle'){cake_hint(t,'Pour batter here');CK.sfx('buzz');return true}
+  if(h&&h.k==='plate'&&t.st==='done'){cake_hint(t,'Bake it in the oven first!');CK.sfx('buzz');return true}
+  return false},
+ job(){return null},
+ draw(t,x,y,s,time){const ctx=CK.ctx;if(t.st==='done')return;ctx.save();ctx.translate(x+s/2,y+s/2);ctx.globalAlpha=.95;cake_tin(s*.28,sh,null,false);ctx.restore()}});
+// cake oven
+CK.station('ck_oven',{colors:['#f28fb5','#b54d7a'],icon:'plate',
+ proc:{rules:['cup','sheet','round'].map(sh=>({in:['tin_'+sh],out:'hot_'+sh})),mode:'cook',time:7,burn:true,warn:6,fireT:3,cap:1,doneMsg:'Baked!'},
+ pick(t,A){const h=A.hold;if(h&&h.k==='f'&&t.st==='idle'&&!procCanAdd(t,h.id)){cake_hint(t,h.id==='batter'?'Pour it into a pan first!':(t.pin||[]).length?'Oven is full!':'Only cake pans go in here');CK.sfx('buzz');return true}
+  if(h&&h.k==='plate'&&t.st==='done'){cake_hint(t,'Too hot! Cool it on the rack');CK.sfx('buzz');return true}return false},
+ job(t){return (t.st==='idle'&&procRule(t))||t.st==='done'||t.st==='burnt'?'station':null},
+ *sous(c,t){yield* cake_sousOven(c,t)},
+ draw(t,x,y,s,time){const ctx=CK.ctx,on=t.st==='idle'&&(t.pin||[]).length>0;ctx.fillStyle='#5a2238';cake_C.rr(x+s*.1,y+s*.18,s*.8,s*.66,s*.1);ctx.fill();
+  ctx.fillStyle=on?'rgba(255,170,60,'+(.6+.25*Math.sin(time*6))+')':t.st==='burnt'?'#3a2a2a':'#7a3a52';cake_C.rr(x+s*.16,y+s*.26,s*.68,s*.5,s*.08);ctx.fill();
+  ctx.strokeStyle='#ffd6e6';ctx.lineWidth=Math.max(1,s*.05);ctx.beginPath();ctx.moveTo(x+s*.28,y+s*.13);ctx.lineTo(x+s*.72,y+s*.13);ctx.stroke();for(const k of [.2,.8])cake_C.circ(x+s*k,y+s*.08,s*.04,'#ffe14a')}});
+// cooling rack
+CK.station('ck_rack',{colors:['#dfe6ee','#8e9bab'],icon:'plate',
+ proc:{rules:['cup','sheet','round'].map(sh=>({in:['hot_'+sh],out:'cake_'+sh})),mode:'cook',time:3,cap:1,doneMsg:'Cooled!'},
+ pick(t,A){const h=A.hold;if(h&&h.k==='f'&&t.st==='idle'&&!procCanAdd(t,h.id)){cake_hint(t,(t.pin||[]).length?'Rack is full!':h.id.startsWith('tin_')?'Bake it first!':'Hot cakes cool here');CK.sfx('buzz');return true}
+  if(h&&h.k==='f'&&t.st==='done'){cake_hint(t,'Rack is full!');CK.sfx('buzz');return true}
+  if(h&&h.k==='plate'&&t.st==='done'){cake_hint(t,'Frost it first!');CK.sfx('buzz');return true}return false},
+ job(t){return t.st==='done'?'station':null},
+ *sous(c,t){yield* cake_sousRack(c,t)},
+ draw(t,x,y,s,time){const ctx=CK.ctx;ctx.strokeStyle='#7d8a99';ctx.lineWidth=Math.max(1,s*.03);for(let i=1;i<6;i++){ctx.beginPath();ctx.moveTo(x+s*.1,y+i*s/6);ctx.lineTo(x+s*.9,y+i*s/6);ctx.stroke()}
+  ctx.strokeRect(x+s*.1,y+s*.1,s*.8,s*.8);const sx=x+s*.84,sy=y+s*.16,k=s*.1;ctx.strokeStyle='#4dabf7';ctx.lineWidth=Math.max(1,s*.035);for(let i=0;i<3;i++){const a=i*1.047;ctx.beginPath();ctx.moveTo(sx-Math.cos(a)*k,sy-Math.sin(a)*k);ctx.lineTo(sx+Math.cos(a)*k,sy+Math.sin(a)*k);ctx.stroke()}}});
+// frosting stations (2 round layers stack here)
+for(const col of ['pink','choc','van']){const F=cake_FR[col];
+ CK.station('ck_frost_'+col,{colors:[col==='choc'?'#f0dcc8':col==='pink'?'#ffe0ef':'#fff7e2',F[2]],icon:'chop',
+  proc:{rules:[{in:['cake_cup'],out:cake_id('cup',col,'')},{in:['cake_sheet'],out:cake_id('sheet',col,'')},{in:['cake_round','cake_round'],out:cake_id('layer',col,'')},{in:['stack2'],out:cake_id('layer',col,'')}],mode:'hold',time:1.6,cap:2,sfx:'splash'},
+  pick(t,A){const h=A.hold,pin=t.pin||[];
+   if(h&&h.k==='f'&&h.id==='cake_round'&&t.st==='idle'&&pin.length===1&&pin[0]==='cake_round'){t.pin=['stack2'];A.hold=null;CK.sfx('drop');CK.msg('Stacked!',t.x+.5,t.y-.1,'#fff');return true}
+   if(h&&h.k==='f'&&t.st==='idle'&&!procCanAdd(t,h.id)){cake_hint(t,pin.length?'Station is busy':cake_parse(h.id)?'Already frosted!':/^(hot_|tin_)/.test(h.id)?'Cool it on the rack first!':'Cooled cakes get frosted here');CK.sfx('buzz');return true}
+   if(h&&h.k==='plate'&&t.st==='done'&&!PLATEABLE.has(t.out)){cake_hint(t,'Decorate it first!');CK.sfx('buzz');return true}
+   if(h&&h.k==='plate'&&t.st==='idle'&&pin.length){cake_hint(t,'Hold 🔪 to frost it');CK.sfx('buzz');return true}
+   return false},
+  use(t,A,dt){const pin=t.pin||[];if(t.st==='idle'&&pin.length===1&&pin[0]==='cake_round'){cake_hint(t,'Stack a 2nd layer first!');return true}return false},
+  *sous(c,t){yield* cake_sousFrost(c,t)},
+  draw(t,x,y,s,time){const ctx=CK.ctx;ctx.fillStyle=F[2];cake_C.rr(x+s*.08,y+s*.08,s*.84,s*.84,s*.14);ctx.fill();ctx.fillStyle=F[0];cake_C.rr(x+s*.13,y+s*.13,s*.74,s*.74,s*.11);ctx.fill();
+   cake_C.ell(x+s*.32,y+s*.28,s*.12,s*.06,F[1]);for(let i=0;i<4;i++)cake_C.circ(x+s*(.25+i*.17),y+s*.78,s*.06,F[1]);
+   ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(x+s*.62,y+s*.22);ctx.lineTo(x+s*.86,y+s*.14);ctx.lineTo(x+s*.8,y+s*.4);ctx.closePath();ctx.fill();cake_C.circ(x+s*.62,y+s*.24,s*.05,F[0])}})}
+// decoration stations
+// plate-in-hand -> deco station: Pick decorates the plated cake right on its plate (Use needs empty hands). The engine's targeting (wouldPick) doesn't
+// know custom station picks, so it would aim Pick at a neighbouring counter instead; extend it just for this case
+// (REQUESTS_cake #6: a station.wouldPick hook would replace this wrapper).
+function cake_plateIn(t,h){return !!(t&&h&&h.k==='plate'&&h.items.length===1&&/^ck_deco_/.test(t.t)&&cake_parse(h.items[0])&&t.st==='idle'&&!(t.fire>0)&&!(t.pin||[]).length&&procCanAdd(t,h.items[0]))}
+if(typeof wouldPick==='function'&&!wouldPick.cake){const wp0=wouldPick;wouldPick=function(t,h){return cake_plateIn(t,h)||wp0(t,h)};wouldPick.cake=1}
+const cake_DSTN={s:'Sprinkles',c:'Cherries',k:'Candles'};
+for(const dx of ['s','c','k']){const rules=[];for(const sh of ['cup','sheet','layer'])for(const col of ['pink','choc','van'])for(const d of cake_SUBS)if(!d.includes(dx))rules.push({in:[cake_id(sh,col,d)],out:cake_id(sh,col,cake_norm(d+dx))});
+ CK.station('ck_deco_'+dx,{colors:dx==='s'?['#e8f6ff','#6aa9d8']:dx==='c'?['#fff0f0','#c94a5a']:['#fff7d6','#d9a441'],icon:'chop',
+  proc:{rules,mode:'hold',time:.7,cap:1,sfx:'pop'},
+  pick(t,A){const h=A.hold;
+   if(cake_plateIn(t,h)){const p=cake_parse(h.items[0]),out=cake_id(p.shape,p.col,cake_norm(p.d+dx));
+    if(!PLATEABLE.has(out)){cake_hint(t,'No order wants that one!');CK.sfx('buzz');return true}
+    h.items=[out];CK.sfx('pop');CK.burst(t.x+.5,t.y+.3,dx==='s'?'#ff7eb6':dx==='c'?'#e23b4e':'#ffd23a',10);CK.msg(cake_DSTN[dx]+'!',t.x+.5,t.y-.1,'#fff');return true}
+   if(h&&h.k==='f'&&t.st==='idle'&&!procCanAdd(t,h.id)){const p=cake_parse(h.id);cake_hint(t,(t.pin||[]).length?'Station is busy':p?(p.d.includes(dx)?'Already has '+cake_DSTN[dx].toLowerCase()+'!':'Hmm?'):'Frost the cake first!');CK.sfx('buzz');return true}
+   if(h&&h.k==='plate'&&t.st==='done'&&!PLATEABLE.has(t.out)){cake_hint(t,'Not on any order yet: decorate more!');CK.sfx('buzz');return true}return false},
+  draw(t,x,y,s,time){const ctx=CK.ctx;
+   if(dx==='s'){ctx.fillStyle='rgba(220,240,255,.9)';cake_C.rr(x+s*.6,y+s*.1,s*.3,s*.42,s*.06);ctx.fill();ctx.strokeStyle='#8cc0e8';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#ff7eb6';ctx.fillRect(x+s*.6,y+s*.08,s*.3,s*.07);cake_sprinkles(x+s*.75,y+s*.34,s*.12,s*.12,10,4);cake_sprinkles(x+s*.32,y+s*.72,s*.2,s*.08,8,11)}
+   else if(dx==='c'){ctx.fillStyle='#ffffff';ctx.beginPath();ctx.ellipse(x+s*.74,y+s*.26,s*.18,s*.12,0,0,Math.PI);ctx.fill();cake_cherry(x+s*.66,y+s*.22,s*.07);cake_cherry(x+s*.8,y+s*.24,s*.07);cake_cherry(x+s*.25,y+s*.78,s*.06)}
+   else{ctx.fillStyle='#ffd6e6';cake_C.rr(x+s*.58,y+s*.12,s*.34,s*.2,s*.04);ctx.fill();for(let i=0;i<3;i++){ctx.fillStyle=['#7ec8ff','#ff7eb6','#ffd23a'][i];ctx.fillRect(x+s*(.62+i*.1),y+s*.15,s*.05,s*.14)}cake_candle(x+s*.22,y+s*.86,s*.07,'#7ec8ff')}}})}
+// ---------- bot helper: multi-decoration cakes are a long chain, so plan them one decoration at a time ----------
+function cake_botDeco(m,W){const p=cake_parse(m);if(!p||p.d.length<2)return null;let waiting=false;
+ const ins=p.d.split('').map(x=>({x,inp:cake_id(p.shape,p.col,p.d.replace(x,''))}));
+ for(const {x,inp} of ins)for(const t of findT(q=>q.t==='ck_deco_'+x&&q.fire<=0)){if(t.st==='done'&&t.out===m)return{t};const pin=t.pin||[];if(t.st==='idle'&&pin.length===1&&pin[0]===inp)return{t,use:()=>t.st!=='idle'||!procRule(t)}}
+ for(const {x,inp} of ins){if(!findT(q=>q.t==='ck_deco_'+x&&q.fire<=0&&q.st==='idle'&&!(q.pin||[]).length).length)continue;W.add(inp);const a=planGet(inp,W,0);if(a&&!a.wait)return a;if(a&&a.wait)waiting=true}
+ return waiting?{wait:true}:null}
+// ---------- sous chef jobs ----------
+const cake_near=(c,list)=>list.sort((a,b)=>Math.hypot(a.x-c.x,a.y-c.y)-Math.hypot(b.x-c.x,b.y-c.y));
+function* cake_sousMixer(c,t){c.icon='chop';const ch=c.chaos?['wander','wrong','drop'][Math.floor(CK.rnd()*3)]:null;if(ch)c.stats.chaos++;let wrongDone=false,dropDone=false;
+ if(!(yield* goTo(c,t)))return say(c,"Can't reach it!");
+ for(let guard=0;guard<8&&t.st==='idle'&&!procRule(t);guard++){if(t.fire>0)return say(c,'FIRE! Not my fault!',2.4);
+  const pin=t.pin||[],miss=cake_BATIN.filter(i=>!pin.includes(i));if(!miss.length)break;let ing=miss[0];
+  if(ch==='wrong'&&!wrongDone){wrongDone=true;const other=findT(q=>q.t==='crate'&&!miss.includes(q.ing));if(other.length)ing=other[Math.floor(CK.rnd()*other.length)].ing}
+  const cr=cake_near(c,findT(q=>q.t==='crate'&&q.ing===ing))[0];if(!cr)return say(c,'We’re out!');c.icon='fetch';yield* act(c,cr);c.icon='chop';if(!c.hold)return say(c,'Hmm?');
+  if(ch==='drop'&&!dropDone){dropDone=true;yield* waitT(c,.3);yield* dropOnFloor(c);continue}
+  yield* act(c,t);if(c.hold){say(c,ing==='egg'?'Extra eggs make it fluffy… right?':'Was that the right one?',2.2);const tr=findT(q=>q.t==='trash')[0];if(tr)yield* act(c,tr);if(c.hold)yield* putDown(c)}}
+ if(t.st==='idle'&&procRule(t)){if(ch==='wander'){yield* wander(c,3,['Ooh, a butterfly!','Is that cotton candy?','Back in a sec, Chef!'][c.i%3])}
+  const ok=yield* useUntil(c,t,()=>t.st!=='idle'||!procRule(t),12);if(ok&&t.st==='done'){if(!ch)c.stats.ok++;say(c,'Batter’s mixed, Chef!');return}}
+ say(c,t.st==='done'?'Batter’s ready!':'Hmm?')}
+function* cake_sousOven(c,t){c.icon='plate';const ch=c.chaos?['burn','drop'][Math.floor(CK.rnd()*2)]:null;if(ch)c.stats.chaos++;
+ const e=G.t+30;while(t.st==='idle'&&procRule(t)&&G.t<e){if(!(yield* goTo(c,t,4)))yield;else{c.moving=false;yield}}
+ if(ch==='burn'&&t.st==='done'){yield* wander(c,7.5,'Mmm, smells like cake… what was I doing?');c.icon='plate'}
+ if(t.fire>0)return say(c,'FIRE! Not my fault!',2.4);
+ if(t.st==='burnt'){yield* act(c,t);say(c,'Was that mine?',2);const tr=findT(q=>q.t==='trash')[0];if(c.hold&&tr)yield* act(c,tr);return}
+ if(t.st!=='done')return say(c,'Nothing baking!');
+ yield* act(c,t);if(!c.hold)return say(c,'Hmm?');
+ if(ch==='drop'){say(c,'Hot hot HOT!',2);yield* waitT(c,.3);yield* dropOnFloor(c);return}
+ const rk=cake_near(c,findT(q=>q.t==='ck_rack'&&q.st==='idle'&&!(q.pin||[]).length&&q.fire<=0&&reachable(q,c.x,c.y)))[0];
+ if(rk){yield* act(c,rk);if(!c.hold){if(!ch)c.stats.ok++;say(c,'Cooling, Chef!');return}}
+ yield* putDown(c,rk||G.P);say(c,'Racks are full, Chef!',2)}
+function* cake_sousFrost(c,t){c.icon='chop';const ch=c.chaos?['wander','splat'][Math.floor(CK.rnd()*2)]:null;if(ch)c.stats.chaos++;
+ if(!(yield* goTo(c,t)))return say(c,"Can't reach it!");
+ if(ch==='wander')yield* wander(c,3.5,['Ooh, sprinkles!','Is that a funnel cake?','Back in a sec, Chef!'][c.i%3]);
+ let splat=ch==='splat';const ok=yield* useUntil(c,t,()=>{if(splat&&t.p>.6){splat=false;t.p=0;c.stun=1.8;say(c,'Oops! Frosting on my hat!',2);sfx('splat');CK.burst(t.x+.5,t.y+.3,cake_FR[t.t.slice(9)]?cake_FR[t.t.slice(9)][0]:'#fff',12)}return t.st!=='idle'||!procRule(t)},16);
+ if(ok&&t.st==='done'){if(!ch)c.stats.ok++;say(c,'Frosted, Chef!')}else say(c,'Hmm?')}
+function* cake_sousRack(c,t){c.icon='fetch';if(t.st!=='done')return say(c,'Still cooling!');
+ if(!(yield* goTo(c,t)))return say(c,"Can't reach it!");yield* act(c,t);if(!c.hold)return say(c,'Hmm?');const id=c.hold.id;
+ // carry it to the frosting station an order wants (or one already holding a single layer)
+ const want=G.orders.map(o=>cake_parse(RECIPES[o.r].need[0])).filter(p=>p&&(p.shape===id.slice(5)||(p.shape==='layer'&&id==='cake_round')));
+ let dst=null;for(const p of want){dst=findT(q=>q.t==='ck_frost_'+p.col&&q.st==='idle'&&q.fire<=0&&(procCanAdd(q,id)||(id==='cake_round'&&(q.pin||[]).length===1&&q.pin[0]==='cake_round')))[0];if(dst)break}
+ if(dst){yield* act(c,dst);if(!c.hold){c.stats.ok++;say(c,'Ready to frost!');return}}
+ yield* putDown(c,G.P);if(!c.hold){c.stats.ok++;say(c,'Here you go, Chef!',2)}}
+// ---------- levels ----------
+const cake_LEG={'1':{crate:'flour'},'2':{crate:'egg'},'3':{crate:'sugar'},'4':{crate:'butter'},'Q':{st:'ck_mixer'},'U':{st:'ck_pan_cup'},'H':{st:'ck_pan_sheet'},'Y':{st:'ck_pan_round'},
+ 'V':{st:'ck_oven'},'Z':{st:'ck_rack'},'p':{st:'ck_frost_pink'},'k':{st:'ck_frost_choc'},'n':{st:'ck_frost_van'},'s':{st:'ck_deco_s'},'r':{st:'ck_deco_c'},'j':{st:'ck_deco_k'}};
+CK.music('bakery',{tempo:116,prog:[[48,52,55],[45,48,52],[41,45,48],[43,47,50]],mel:[76,-1,79,76,72,-1,74,76,77,-1,76,74,72,-1,-1,-1,74,-1,76,77,79,-1,77,76,74,-1,72,74,72,-1,-1,-1],wave:'triangle'});
+function cake_bounds(){const G=CK.G;let x0=13,y0=9,x1=0,y1=0;for(const t of G.tiles)if(t.t!=='void'){x0=Math.min(x0,t.x);y0=Math.min(y0,t.y);x1=Math.max(x1,t.x+1);y1=Math.max(y1,t.y+1)}return[x0,y0,x1,y1]}
+// Scroll-camera workaround (REQUESTS_cake #5): when the phone view scrolls a 13-wide world, our 9-wide kitchen
+// would be cropped as the camera follows Kelly. If the real kitchen fits the view, shift the whole kitchen draw
+// (tiles, chefs, pops) so it sits centred. Lives inside drawKitchen's save/restore; dx=0 when the engine already centres it.
+function cake_center(ctx,KX,s){const L=typeof LAY!=='undefined'?LAY:null;if(!L||!L.world)return 0;const [x0,,x1]=cake_bounds();
+ if((x1-x0+.5)*s>L.kit[2])return 0;const dx=Math.round(L.kit[0]+L.kit[2]/2-(KX+(x0+x1)/2*s));if(dx)ctx.translate(dx,0);return dx}
+function cake_backdrop(ctx,KX,KY,s,time){cake_center(ctx,KX,s);const [x0,y0,x1,y1]=cake_bounds(),X=KX+x0*s,Y=KY+y0*s,Wd=(x1-x0)*s,Hd=(y1-y0)*s;ctx.fillStyle='rgba(90,40,60,.38)';cake_C.rr(X-s*.22,Y-s*.4,Wd+s*.44,Hd+s*.6,s*.25);ctx.fill();
+ const n=x1-x0;for(let i=0;i<n;i++){ctx.fillStyle=i%2?'#fff':'#ff8cc6';ctx.beginPath();ctx.moveTo(X+i*s,Y-s*.42);ctx.lineTo(X+(i+1)*s,Y-s*.42);ctx.lineTo(X+(i+1)*s,Y-s*.3);ctx.arc(X+(i+.5)*s,Y-s*.3,s/2,0,Math.PI);ctx.closePath();ctx.fill()}}
+function cake_party(ctx,KX,KY,s,time){// string lights + balloons along the frame
+ const [x0,y0,x1,y1]=cake_bounds(),X=KX+x0*s,Y=KY+y0*s,Wd=(x1-x0)*s,n=(x1-x0)*2;const yy=Y-s*.38;ctx.strokeStyle='rgba(60,30,30,.6)';ctx.lineWidth=1;ctx.beginPath();for(let i=0;i<=n;i++){const x=X+i*s/2,y=yy+Math.sin(i*1.2)*s*.04;i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke();
+ for(let i=0;i<n;i++){const on=(Math.floor(time*3)+i)%3!==0;cake_C.circ(X+(i+.5)*s/2,yy+s*.06,s*.07,on?['#ffe14a','#ff6fb1','#6fd3ff','#8fff7a'][i%4]:'rgba(255,255,255,.3)')}
+ for(const [bx,c] of [[X-s*.3,'#ff5a8a'],[X+Wd+s*.3,'#5ac8ff']]){const by=Y+s*.6+Math.sin(time*1.5+bx)*s*.08;ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(bx,by+s*.25);ctx.lineTo(bx,by+s*.7);ctx.stroke();cake_C.ell(bx,by,s*.22,s*.28,c);cake_C.ell(bx-s*.06,by-s*.08,s*.05,s*.08,'rgba(255,255,255,.6)')}}
+// kitchens are 9x8: centred in the 13x9 engine grid with void padding
+function cake_pad(g){return g.map(r=>'  '+r+'  ').concat([' '.repeat(13)])}
+const cake_lv=o=>CK.level(Object.assign({group:'cake',legend:cake_LEG,backdrop:cake_backdrop,music:'bakery',color:'#8a5ad8'},o));
+const R_=cake_rec;
+cake_lv({n:'Cupcake Corner',sub:'Mix, bake, cool and frost',color:'#e0439a',
+ twist:'Put flour, eggs, sugar and butter in the mixer and HOLD 🔪 to mix. Drop the batter on the cupcake tray, bake it, cool it on the rack, then frost it. One bowl makes 2 batches!',
+ rec:[R_('cup','pink',''),R_('cup','choc',''),R_('cup','choc','s'),R_('cup','pink','')],time:210,plates:3,dirty:false,maxO:3,gap:26,first:1,sous:1,stars:[40,130,230],
+ g:cake_pad(["#1234#W##", "Q.......#", "#.......V", "U..#s#..Z", "#.......#", "p.......#", "k...@...E", "##P#T#P##"])});
+cake_lv({n:'Sheet Cake Social',sub:'Frosted sheet cakes, cherries on top',color:'#ff7a3d',
+ twist:'Sheet cakes go in the big pan. Frost them vanilla, chocolate or pink, then add sprinkles or cherries. Dirty plates come back: wash them in the sink!',
+ rec:[R_('sheet','van','s'),R_('sheet','choc','c'),R_('sheet','pink',''),R_('cup','pink','c')],time:220,plates:3,maxO:3,gap:28,first:1,sous:1,stars:[50,150,260],
+ g:cake_pad(["#1234#W##", "Q.......R", "U.......K", "H..pnk..V", "#.......V", "#.......Z", "E...@...#", "##P#T#sr#"])});
+cake_lv({n:'Layer Cake Tower',sub:'Stack two layers, then frost',color:'#3aa0d8',
+ twist:'Layer cakes need TWO round layers. Bake two, cool them, and drop both on a frosting station to stack them. Then hold 🔪 to frost the whole tower!',
+ rec:[R_('layer','choc','c'),R_('layer','pink','s'),R_('layer','van',''),R_('sheet','van','s')],time:240,plates:3,maxO:3,gap:34,first:1,sous:2,stars:[60,180,300],
+ g:cake_pad(["#1234#W##", "Q.......V", "Y.......V", "H..pkn..Z", "#.......Z", "R.......#", "K...@...E", "##P#T#sr#"])});
+cake_lv({n:'Bakery Rush',sub:'Send cakes down the belt',color:'#8a5ad8',
+ twist:'The bakery is split in two! Bake on the left, then send cooled cakes across on the conveyor belt to frost and decorate them on the right. Or run the long way around!',
+ rec:[R_('cup','van','s'),R_('sheet','choc','s'),R_('layer','pink','c'),R_('sheet','pink','sc'),R_('cup','van','s')],time:250,plates:4,maxO:3,gap:24,first:2,sous:2,stars:[60,180,310],
+ g:cake_pad(["#123#nkW#", "4...X...p", "Q...X...s", "U..>>>..r", "H...X...R", "Y...X...K", "V...@...E", "#VZZ#P#T#"])});
+cake_lv({n:'Birthday Bash',sub:'Candles, sprinkles and a party!',color:'#2fae4a',burn:.8,
+ drawOver:cake_party,
+ twist:'It’s a carnival birthday party! Cakes need candles PLUS more decorations. Use each decoration station in turn. The ovens run hot tonight, so watch for fires!',
+ rec:[R_('layer','pink','sk'),R_('sheet','choc','ck'),R_('cup','van','k'),R_('layer','van','sck'),R_('cup','van','k')],time:270,plates:4,maxO:3,gap:28,first:2,sous:2,stars:[70,190,320],
+ g:cake_pad(["#1234#W##", "Q.......R", "U.......K", "H..pkn..V", "Y.......V", "#..srj..Z", "E...@...Z", "##P#T#P##"])});
+
+}catch(e){(window.__ERR=window.__ERR||[]).push("p9_cake.js"+": "+e.message);console.error("p9_cake.js",e)}
+
 // ===== screens, HUD, input, audio, main loop =====
 const SKEY='ckcc_save_v1';
 save=(()=>{try{const s=JSON.parse(localStorage.getItem(SKEY));if(s&&s.best)return s}catch(e){}return{best:{},stars:{},muted:false}})();
@@ -1194,8 +1469,10 @@ function drawIntro(){carnivalBG();const s=S(),L=LEVELS[sel],p=panel(Math.min(460
  txt('in1','Level '+(sel+1),p.x+p.w/2,y,18,'#b4471d',null,iw,{outline:false});y+=32;txt('in2',L.n,p.x+p.w/2,y,Math.min(30,p.h*.08),'#fff',null,iw,{oc:'#b4471d'});y+=30;
  const sz=Math.max(16,Math.min(18,p.h*.042));const lines=wrap(L.twist,iw,sz,true);lines.forEach(l=>{txt('inl'+y,l,p.x+p.w/2,y,sz,'#3a1a0a',null,iw,{outline:false});y+=sz*1.28});y+=8;
  txt('in3','Orders today:',p.x+p.w/2,y,17,'#b4471d',null,iw,{outline:false});y+=10;
- const uniq=[...new Set(L.rec)],cs=Math.min(64,(iw-10)/uniq.length);uniq.forEach((k,i)=>{const cx=p.x+p.w/2+(i-(uniq.length-1)/2)*cs;recipeChip(k,cx,y+cs*.42,cs*.8);txt(null,RECIPES[k].n,cx,y+cs*.95,Math.max(13,Math.min(16,cs*.24)),'#3a1a0a',null,cs-2,{outline:false})});
- y+=cs*1.1+16;reg('chips',p.x+pad,y-cs*1.1-16,iw,cs*1.1);
+ const uniq=[...new Set(L.rec)],per=uniq.length>3?Math.ceil(uniq.length/2):uniq.length,rows=Math.ceil(uniq.length/per),cw=Math.min(120,(iw-6)/per),cs=Math.min(58,cw*.6,(p.y+p.h-pad-60-y-30)/rows-40),rh=cs+42,y00=y;
+ uniq.forEach((k,i)=>{const r=Math.floor(i/per),n=Math.min(per,uniq.length-r*per),c=i-r*per,cx=p.x+p.w/2+(c-(n-1)/2)*cw,yy=y+r*rh;recipeChip(k,cx,yy+cs*.5,cs*.85);
+  wrap(RECIPES[k].n,cw-6,15,true).slice(0,2).forEach((l,q)=>txt(null,l,cx,yy+cs+10+q*17,15,'#3a1a0a',null,cw-4,{outline:false}))});
+ y+=rows*rh+10;reg('chips',p.x+pad,y00,iw,rows*rh);
  txt('in4','★ '+L.stars[0]+'   ★★ '+L.stars[1]+'   ★★★ '+L.stars[2],p.x+p.w/2,y,19,'#c9a227',null,iw,{outline:false});
  const bh=Math.min(54,(p.y+p.h-pad-(y+16))),bw=(iw-10)/2,by=p.y+p.h-pad-bh;
  button('ib',p.x+pad,by,bw*.8,bh,'Back','#8a5a3c',()=>go('map'));button('start',p.x+pad+bw*.8+10,by,iw-bw*.8-10,bh,'Start Cooking!','#2fae4a',()=>startLevel(sel))}
@@ -1213,16 +1490,18 @@ function drawHow(){carnivalBG();const s=S(),p=panel(Math.min(480,s.w-16),Math.mi
  const bw=(iw-20)/3;button('hprev',p.x+pad,by,bw,bh,'◀','#8a5a3c',()=>{howPage=(howPage+HOW.length-1)%HOW.length});button('hdone',p.x+pad+bw+10,by,bw,bh,'Done','#2fae4a',()=>go(G&&prevState==='pause'?'pause':'title'));button('hnext',p.x+pad+2*bw+20,by,bw,bh,'▶','#8a5a3c',()=>{howPage=(howPage+1)%HOW.length})}
 // ---------- play layout ----------
 let LAY=null;
-function playLayout(){const s=S(),port=s.h>s.w*1.05,pad=6;const o={port};
+function kBounds(){if(!G)return{x0:0,y0:0,c:COLS,r:ROWS};if(G.bb&&G.bb.L===G.L)return G.bb;let x0=COLS,x1=-1,y0=ROWS,y1=-1;for(const t of G.tiles)if(t.t!=='void'){x0=Math.min(x0,t.x);x1=Math.max(x1,t.x);y0=Math.min(y0,t.y);y1=Math.max(y1,t.y)}
+ if(x1<0)return{x0:0,y0:0,c:COLS,r:ROWS};return G.bb={L:G.L,x0,y0,c:x1-x0+1,r:y1-y0+1}}
+function playLayout(){const bb=kBounds(),BC=bb.c,BR=bb.r;const s=S(),port=s.h>s.w*1.05,pad=6;const o={port};
  if(port){const sb=46;o.pause=[s.l+pad,s.t+pad,sb,sb];o.mute=[s.r-pad-sb,s.t+pad,sb,sb];const pw=(s.w-2*pad-2*sb-24)/2;o.score=[s.l+pad+sb+8,s.t+pad+3,pw,sb-6];o.timer=[s.l+pad+sb+16+pw,s.t+pad+3,pw,sb-6];
   const shortP=s.h<720,th=Math.max(shortP?70:76,Math.min(shortP?78:104,s.w/3.8));o.tk=[s.l+pad,s.t+pad+sb+6,s.w-2*pad,th];const ctrlH=Math.max(shortP?140:150,Math.min(250,s.h*(shortP?.22:.25)));o.ctrl=[s.l,s.b-ctrlH,s.w,ctrlH];
-  const ky=o.tk[1]+th+6,kh=o.ctrl[1]-6-ky,vw=s.w-2*pad;o.TS=Math.floor(Math.min(kh/(ROWS+.9),46,Math.max(vw/(COLS+.9),vw/9.6)));const kw=o.TS*(COLS+.9),khh=o.TS*(ROWS+.9);
+  const ky=o.tk[1]+th+6,kh=o.ctrl[1]-6-ky,vw=s.w-2*pad;o.TS=Math.floor(Math.min(kh/(BR+.9),46,Math.max(vw/(BC+.9),vw/9.6)));const kw=o.TS*(BC+.9),khh=o.TS*(BR+.9);
   if(kw<=vw)o.kit=[s.l+(s.w-kw)/2,ky+(kh-khh)/2,kw,khh];else{o.kit=[s.l+pad,ky+(kh-khh)/2,vw,khh];o.world=kw}
-  const r1=Math.min((ctrlH-16)/3.5,(s.w*.62-14)/4.3,58),r2=r1*.64;o.pick=[s.r-pad-r1-4,s.b-pad-r1-6,r1];o.use=[o.pick[0]-r1*2.2,o.pick[1]-r1*.45,r1];o.asg=[o.pick[0]+r1-r2,o.pick[1]-r1*2.05-4,r2];
+  const r1=Math.min((ctrlH-16)/3.5,(s.w*.62-14)/4.3,58),r2=r1*.76;o.pick=[s.r-pad-r1-4,s.b-pad-r1-6,r1];o.use=[o.pick[0]-r1*2.2,o.pick[1]-r1*.45,r1];o.asg=[o.pick[0]+r1-r2,o.pick[1]-r1*2.05-4,r2];
   o.joy=[s.l+pad,s.b-ctrlH+pad,s.w/2-pad*2-r1*.2,ctrlH-pad*2]}
  else{const side=Math.max(128,Math.min(230,s.w*.21));const sb=44;o.pause=[s.l+pad,s.t+pad,sb,sb];o.mute=[s.r-pad-sb,s.t+pad,sb,sb];o.score=[s.l+pad,s.t+pad+sb+6,side-2*pad,32];o.timer=[s.r-side+pad,s.t+pad+sb+6,side-2*pad,32];
   const th=Math.max(62,Math.min(90,s.h*.2));o.tk=[s.l+side,s.t+pad,s.w-2*side,th];const ky=s.t+pad+th+4,kh=s.b-pad-ky,kwA=s.w-2*side;
-  o.TS=Math.floor(Math.min(kwA/(COLS+.9),kh/(ROWS+.9)));const kw=o.TS*(COLS+.9),khh=o.TS*(ROWS+.9);o.kit=[s.l+side+(kwA-kw)/2,ky+(kh-khh)/2,kw,khh];
+  o.TS=Math.floor(Math.min(kwA/(BC+.9),kh/(BR+.9)));const kw=o.TS*(BC+.9),khh=o.TS*(BR+.9);o.kit=[s.l+side+(kwA-kw)/2,ky+(kh-khh)/2,kw,khh];
   const top=o.score[1]+o.score[3]+8,avail=s.b-top;const r1=Math.min((side-16)/2.1,(avail-pad-20)/5.3,56),r2=r1*.64;const cx=s.r-side/2;
   o.pick=[cx,s.b-pad-r1-4,r1];o.use=[cx,o.pick[1]-r1*2.2,r1];o.asg=[cx,o.use[1]-r1-8-r2,r2];o.joy=[s.l+pad,top,side-2*pad,s.b-pad-top]}
  return o}
@@ -1232,17 +1511,17 @@ function drawTickets(o){const r=o.tk,n=G.L.maxO,gap=5,tw=Math.min((r[2]-gap*(n-1
  G.orders.forEach((od,i)=>{const x=r[0]+i*(tw+gap),y=r[1],R=RECIPES[od.r],f=od.t/od.T,urgent=f<.25,wig=urgent?Math.sin(TIME*20)*1.5:0;
   ctx.save();ctx.translate(wig,0);ctx.fillStyle='#fffaf0';rr(x,y,tw,th,8);ctx.fill();ctx.strokeStyle=urgent?'#e5392a':'#c9a27a';ctx.lineWidth=2;ctx.stroke();
   ctx.fillStyle=f>.5?'#3fbf4a':f>.25?'#f2b630':'#e5392a';rr(x+3,y+th-9,Math.max(4,(tw-6)*f),6,3);ctx.fill();
-  const fz=Math.max(15,Math.min(18,tw*.17)),nl=wrap(R.n,tw-6,fz,true).slice(0,2),ds=Math.min(tw*.62,th-14-nl.length*fz*1.05);drawDish(od.r,x+tw/2,y+4+ds*.5,ds);
+  const fz=Math.max(16,Math.min(18,tw*.17)),nl=wrap(R.n,tw-6,fz,true).slice(0,2),ds=Math.min(tw*.62,th-14-nl.length*fz*1.05);drawDish(od.r,x+tw/2,y+4+ds*.5,ds);
   nl.forEach((l,k)=>txt(null,l,x+tw/2,y+th-13-(nl.length-1-k)*fz*1.02-fz*.45,fz,'#3a1a0a',null,tw-4,{outline:false}));ctx.restore();reg('ticket'+i,x,y,tw,th)})
  if(!G.orders.length)txt('waiting','Waiting for orders…',r[0]+r[2]/2,r[1]+r[3]/2,18,'#fff',null,r[2])}
 function ctrlCircle(id,c,label,sub,col,on){const [x0,y0,r0]=c;const r=on?r0*.93:r0,x=x0,y=y0+(on?3:0);ctx.globalAlpha=on?1:.92;if(!on)circ(x,y+4,r,'rgba(0,0,0,.32)');circ(x,y,r,col);ctx.strokeStyle='#fff';ctx.lineWidth=on?5:3;ctx.stroke();if(on){circ(x,y,r*.9,'rgba(255,255,255,.28)')}
  ctx.font=Math.round(r*(sub?.56:.7))+'px system-ui,"Noto Color Emoji"';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(label,x,y-(sub?r*.2:0));
- if(sub){txt(null,sub,x,y+r*.5,Math.max(15,Math.min(19,r*.34)),'#fff',null,r*1.9,{oc:'rgba(0,0,0,.75)'})}ctx.textBaseline='alphabetic';ctx.globalAlpha=1;reg('btn:'+id,x0-r0,y0-r0,r0*2,r0*2+3)}
+ if(sub){txt(null,sub,x,y+r*.5,Math.max(16,Math.min(19,r*.34)),'#fff',null,r*2.15,{oc:'rgba(0,0,0,.75)'})}ctx.textBaseline='alphabetic';ctx.globalAlpha=1;reg('btn:'+id,x0-r0,y0-r0,r0*2,r0*2+3)}
 let CAMX=0,CAMT=0,CAMLV=null;
-function drawPlay(dim){const o=playLayout();LAY=o;TS=o.TS;KY=o.kit[1]+TS*.55;let cam=0;
- if(o.world){const vw=o.kit[2],max=o.world-vw,want=Math.max(0,Math.min(max,(G.P.x+.45)*TS-vw/2)),dtc=Math.min(1,Math.max(0,TIME-CAMT));
+function drawPlay(dim){const o=playLayout(),bb=kBounds();LAY=o;TS=o.TS;KY=o.kit[1]+TS*.55-bb.y0*TS;let cam=0;
+ if(o.world){const vw=o.kit[2],max=o.world-vw,want=Math.max(0,Math.min(max,(G.P.x-bb.x0+.45)*TS-vw/2)),dtc=Math.min(1,Math.max(0,TIME-CAMT));
   if(CAMLV!==G||G.cd>0||window.__MANUAL)CAMX=want;else CAMX+=(want-CAMX)*(1-Math.exp(-dtc*5));CAMX=Math.max(0,Math.min(max,CAMX));cam=CAMX}CAMT=TIME;CAMLV=G;
- KX=o.kit[0]+TS*.45-cam;
+ KX=o.kit[0]+TS*.45-cam-bb.x0*TS;
  ctx.fillStyle=G.L.truck?'#7fb3d5':'#5b3a2e';ctx.fillRect(0,0,W,H);if(!G.L.truck){ctx.globalAlpha=.15;bgKitchen();ctx.globalAlpha=1}else{ctx.fillStyle='#8fc46a';ctx.fillRect(0,H*.55,W,H*.45)}
  ctx.save();if(o.world){ctx.beginPath();ctx.rect(o.kit[0],o.kit[1]-4,o.kit[2],o.kit[3]+8);ctx.clip()}drawKitchen(TIME);
  if(o.world){const fw=Math.min(26,TS*.7);for(const [x0,dirn,show] of [[o.kit[0],1,cam>2],[o.kit[0]+o.kit[2],-1,cam<o.world-o.kit[2]-2]]){if(!show)continue;const g=ctx.createLinearGradient(x0,0,x0+dirn*fw,0);g.addColorStop(0,'rgba(40,20,10,.55)');g.addColorStop(1,'rgba(40,20,10,0)');ctx.fillStyle=g;ctx.fillRect(dirn>0?x0:x0-fw,o.kit[1]-4,fw,o.kit[3]+8);
@@ -1257,11 +1536,11 @@ function drawPlay(dim){const o=playLayout();LAY=o;TS=o.TS;KY=o.kit[1]+TS*.55;let
  else if(AUTO){const hw=o.port?Math.max(90,o.use[0]-o.use[2]-j[0]-8):j[2];txt(null,'Walking…',j[0]+hw/2,(o.port?o.use[1]:j[1]+j[3]/2)-10,17,'#fff',null,hw,{oc:'rgba(0,0,0,.7)'});txt(null,'tap to stop',j[0]+hw/2,(o.port?o.use[1]:j[1]+j[3]/2)+10,17,'#fff',null,hw,{oc:'rgba(0,0,0,.7)'})}
  else if(G.t<25||!SWIPED){const hw=o.port?Math.max(90,o.use[0]-o.use[2]-j[0]-8):j[2],hx=j[0]+hw/2,hy=o.port?o.use[1]:j[1]+j[3]/2;ctx.globalAlpha=.8;['👆 Swipe','anywhere','to walk'].forEach((l,i)=>txt(null,l,hx,hy+(i-1)*20,17,'#fff',null,hw,{oc:'rgba(0,0,0,.7)'}));ctx.globalAlpha=1}
  const h=G.P.hold,tt=withActor(G.P,()=>targetTile('use'));
- const useLbl=h&&h.k==='ext'?'Spray':tt&&tt.t==='sink'?'Wash':'Chop';
- ctrlCircle('pick',o.pick,'✋',h?'Drop':'Pick up','#2fae4a',KEYS.pickHeld);ctrlCircle('use',o.use,h&&h.k==='ext'?'🧯':tt&&tt.t==='sink'?'🧽':'🔪',useLbl,'#e88b2e',INP.use);
+ const sd=tt&&STN[tt.t],useLbl=h&&h.k==='ext'?'Spray':tt&&tt.t==='sink'?'Wash':sd&&sd.useLabel?sd.useLabel:'Chop';
+ ctrlCircle('pick',o.pick,'✋',h?'Drop':'Pick up','#2fae4a',KEYS.pickHeld);ctrlCircle('use',o.use,h&&h.k==='ext'?'🧯':tt&&tt.t==='sink'?'🧽':sd&&sd.useIcon?sd.useIcon:'🔪',useLbl,'#e88b2e',INP.use);
  const busy=G.sous.every(c=>c.task);ctrlCircle('asg',o.asg,'👨‍🍳',busy?'Busy':'Assign',busy?'#7d8aa0':'#4a7fd9',ASGHELD);
  if(dim){UIE.length=reg0}
- if(G.cd>0){const t=G.cd>.8?'Ready…':'Cook!';txt(null,t,KX+COLS*TS/2,KY+ROWS*TS/2,Math.min(64,TS*2),'#fff',null,COLS*TS,{oc:'#b4471d'})}
+ if(G.cd>0){const t=G.cd>.8?'Ready…':'Cook!';txt(null,t,o.kit[0]+o.kit[2]/2,o.kit[1]+o.kit[3]/2,Math.min(64,TS*2),'#fff',null,o.kit[2],{oc:'#b4471d'})}
  if(G.fires>0&&Math.floor(TIME*4)%2===0){ctx.strokeStyle='rgba(255,60,30,.8)';ctx.lineWidth=6;ctx.strokeRect(o.kit[0]+3,o.kit[1]+3,o.kit[2]-6,o.kit[3]-6);txt(null,'🔥 FIRE! Grab the extinguisher!',o.kit[0]+o.kit[2]/2,o.kit[1]+TS*.5,Math.max(18,TS*.5),'#ffe14a',null,o.kit[2]-8)}}
 function drawPause(){drawPlay(true);const p=panel(320,420),pad=16;txt('pt','Paused',p.x+p.w/2,p.y+34,30,'#fff',null,p.w-20,{oc:'#b4471d'});const bh=Math.min(52,(p.h-80-pad*5)/5),bw=p.w-2*pad;let y=p.y+66;
  button('resume',p.x+pad,y,bw,bh,'▶ Resume','#2fae4a',()=>go('play'));y+=bh+12;button('restart',p.x+pad,y,bw,bh,'↻ Restart','#e88b2e',()=>startLevel(G.li));y+=bh+12;
