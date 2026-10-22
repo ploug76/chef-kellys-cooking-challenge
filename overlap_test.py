@@ -13,7 +13,7 @@ async def main():
   async with async_playwright() as p:
     b=await p.chromium.launch()
     for vi,(w,h,safe) in enumerate(VIEWS):
-      ctx=await b.new_context(viewport={'width':w,'height':h},is_mobile=True,has_touch=True);pg=await ctx.new_page();errs=[];pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:errs.append(m.text) if m.type=='error' else None)
+      ctx=await b.new_context(viewport={'width':w,'height':h},is_mobile=True,has_touch=True);pg=await ctx.new_page();await pg.route('https://firestore.googleapis.com/**',lambda r:r.abort());errs=[];pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:errs.append(m.text) if m.type=='error' else None)
       if safe:await ctx.add_init_script('window.__SAFE='+json.dumps(safe))
       await pg.goto(URL);await pg.wait_for_timeout(700);await pg.evaluate('()=>{window.__CHECK=eval('+json.dumps(CHECK)+');__T.silent=true}')
       await pg.evaluate("()=>{if(window.__dock){__dock.forceInstall()}}");await pg.wait_for_timeout(400)
