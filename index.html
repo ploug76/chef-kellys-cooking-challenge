@@ -110,7 +110,22 @@ function pour(v,p){if(v.st!=='done'||p.k!=='plate')return false;const r=v.items.
 function canPlace(t,h){if(!t||t.fire>0||t.it)return false;
  switch(t.t){case 'counter':case 'conv':return true;case 'board':return h.k==='f';case 'stove':return h.k==='pot'||h.k==='pan';
   case 'oven':return h.k==='plate'&&(pizzaReady(h)||h.items.some(i=>i.startsWith('pizza:')));default:return false}}
-function targetTile(){const P=ACT,d=DIRS[P.dir];return tileAt(Math.floor(P.x+d[0]*0.62),Math.floor(P.y+d[1]*0.62))}
+function canCombine(h,it){if(!h||!it)return false;
+ if(h.k==='plate'&&it.k==='f')return canAddToPlate(h,it.id);if(h.k==='f'&&it.k==='plate')return canAddToPlate(it,h.id);
+ if(h.k==='plate'&&(it.k==='pot'||it.k==='pan'))return it.st==='done'&&it.items.length>0;if((h.k==='pot'||h.k==='pan')&&it.k==='plate')return h.st==='done'&&h.items.length>0;
+ if(h.k==='f'&&(it.k==='pot'||it.k==='pan'))return canAddToVessel(it,h.id);if((h.k==='pot'||h.k==='pan')&&it.k==='f')return canAddToVessel(h,it.id);return false}
+function wouldPick(t,h){if(!t||!interactive(t)||t.fire>0)return false;
+ if(!h)return !!(t.it||t.t==='crate'||(t.t==='plates'&&t.n>0)||(t.t==='return'&&t.n>0)||(t.t==='sink'&&t.clean>0));
+ switch(t.t){case 'trash':return h.k!=='dirty'&&h.k!=='ext';case 'serve':return h.k==='plate'&&h.items.length>0;case 'sink':return h.k==='dirty'||(h.k==='f'&&t.clean>0&&canAddToPlate(mkPlate(),h.id));
+  case 'plates':return (h.k==='plate'&&!h.items.length)||(h.k==='f'&&t.n>0&&canAddToPlate(mkPlate(),h.id));case 'crate':return (h.k==='f'&&h.id===t.ing&&!h.cp)||(h.k==='plate'&&canAddToPlate(h,t.ing));case 'return':return false}
+ if(t.it)return canCombine(h,t.it);return canPlace(t,h)}
+function wouldUse(t){return !!t&&t.fire<=0&&((t.t==='board'&&t.it&&t.it.k==='f'&&!!CHOPPABLE[t.it.id])||(t.t==='sink'&&t.n>0))}
+// Forgiving targeting: the faced tile if it has something to do, else the best adjacent tile in a ~70 degree cone.
+function targetTile(mode){const P=ACT,d=DIRS[P.dir],f=tileAt(Math.floor(P.x+d[0]*0.62),Math.floor(P.y+d[1]*0.62)),ok=mode==='use'?wouldUse:(t=>wouldPick(t,P.hold));if(f&&ok(f))return f;
+ const cx=Math.floor(P.x),cy=Math.floor(P.y);let best=null,bs=-1e9;
+ for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){if(!ox&&!oy)continue;const t=tileAt(cx+ox,cy+oy);if(!t||t===f||!interactive(t))continue;
+  const vx=t.x+.5-P.x,vy=t.y+.5-P.y,dist=Math.hypot(vx,vy),dot=(vx*d[0]+vy*d[1])/dist;if(dot<.34||dist>1.3||!ok(t))continue;const sc=dot*1.5-dist;if(sc>bs){bs=sc;best=t}}
+ return best||f}
 function msg(text,x,y,col){G.pops.push({text,x,y,t:0,col:col||'#fff'})}
 // ---- Pick up / drop ----
 function doPick(){if(!G||G.done||G.cd>0)return;const P=ACT,t=targetTile();if(!interactive(t)){if(P.hold&&P.hold.k==='ext'){}return}
@@ -125,11 +140,11 @@ function doPick(){if(!G||G.done||G.cd>0)return;const P=ACT,t=targetTile();if(!in
   return}
  if(t.t==='trash'){if(h.k==='f'){P.hold=null;sfx('trash')}else if(h.k==='plate'){if(h.items.length){h.items=[];h.p=0;h.st='raw';h.ov=0;sfx('trash')}}else if(h.k==='pot'||h.k==='pan'){if(h.items.length){resetVessel(h);sfx('trash')}}return}
  if(t.t==='serve'){serve(h,t);return}
- if(t.t==='sink'){if(h.k==='dirty'){t.n+=h.n;P.hold=null;sfx('splash')}return}
- if(t.t==='plates'){if(h.k==='plate'&&!h.items.length){t.n++;P.hold=null;sfx('plate')}return}
- if(t.t==='crate'){if(h.k==='f'&&h.id===t.ing&&!h.cp){P.hold=null;sfx('drop')}else if(h.k==='plate'&&t.ing==='bun'&&addToPlate(h,'bun')){sfx('drop')}return}
+ if(t.t==='sink'){if(h.k==='dirty'){t.n+=h.n;P.hold=null;sfx('splash')}else if(h.k==='f'&&t.clean>0){const p=mkPlate();if(addToPlate(p,h.id)){t.clean--;P.hold=p;sfx('plate')}else{msg('Chop it first!',cx,cy,'#ffd84a');sfx('buzz')}}return}
+ if(t.t==='plates'){if(h.k==='plate'&&!h.items.length){t.n++;P.hold=null;sfx('plate')}else if(h.k==='f'){const p=mkPlate();if(t.n<=0){msg('No clean plates!',cx,cy,'#ffd84a');sfx('buzz')}else if(addToPlate(p,h.id)){t.n--;P.hold=p;sfx('plate')}else{msg(CHOPPABLE[h.id]?'Chop it first!':'Cook it first!',cx,cy,'#ffd84a');sfx('buzz')}}return}
+ if(t.t==='crate'){if(h.k==='f'&&h.id===t.ing&&!h.cp){P.hold=null;sfx('drop')}else if(h.k==='plate'&&addToPlate(h,t.ing)){sfx('drop')}else if(h.k==='plate'){msg(CHOPPABLE[t.ing]?'Chop it first!':'Can\'t go on a plate',cx,cy,'#ffd84a');sfx('buzz')}return}
  if(t.t==='return')return;
- if(t.it){if(combine(h,t.it,t)){sfx('drop');return}sfx('buzz');return}
+ if(t.it){if(combine(h,t.it,t)){sfx('drop');return}if((h.k==='f'&&t.it.k==='plate'&&CHOPPABLE[h.id])||(h.k==='plate'&&t.it.k==='f'&&CHOPPABLE[t.it.id]))msg('Chop it first!',cx,cy,'#ffd84a');sfx('buzz');return}
  if(canPlace(t,h)){t.it=h;h.cm=0;P.hold=null;sfx('drop');return}
  sfx('buzz')}
 function combine(h,it,t){const P=ACT;
@@ -154,7 +169,7 @@ function doUse(dt){const P=ACT;P.act=0;if(!G||G.done||G.cd>0)return;const h=P.ho
   for(let k=1;k<=2;k++){const x=Math.floor(P.x+d[0]*(k-0.38)),y=Math.floor(P.y+d[1]*(k-0.38));for(const [ox,oy] of k===2?[[0,0],[d[1],d[0]],[-d[1],-d[0]]]:[[0,0]]){const t=tileAt(x+ox,y+oy);if(t&&t.fire>0){t.fire-=dt*1.6;if(t.fire<=0){t.fire=0;t.fs=0;msg('Fire out!',t.x+.5,t.y+.3,'#9fe8ff')}}}}
   if(rnd()<.8)G.parts.push({x:P.x+d[0]*.4,y:P.y+d[1]*.4-.3,vx:d[0]*3+(rnd()-.5),vy:d[1]*3+(rnd()-.5),t:0,life:.5,col:'#eaf6ff',r:.12});
   if((P.spray%0.3)<dt)sfx('spray');return}
- if(h)return;const t=targetTile();if(!t||t.fire>0)return;
+ if(h)return;const t=targetTile('use');if(!t||t.fire>0)return;
  if(t.t==='board'&&t.it&&t.it.k==='f'&&CHOPPABLE[t.it.id]){const it=t.it;it.cp+=dt/G.L.chop;P.act=1;P.chop+=dt;
   if((P.chop%0.22)<dt){sfx('chop');G.parts.push({x:t.x+.5,y:t.y+.4,vx:(rnd()-.5)*2,vy:-1-rnd(),t:0,life:.4,col:foodColor(it.id),r:.07})}
   if(it.cp>=1){it.id=it.id+'_c';it.cp=0;sfx('pop');burst(t.x+.5,t.y+.4,foodColor(it.id),6)}return}
@@ -439,7 +454,7 @@ function drawKitchen(time){const s=TS,P=G.P;ctx.save();
   for(const wx of [KX+s*1.5,KX+COLS*s-s*1.5]){circ(wx,KY+ROWS*s+s*.22,s*.35,'#222');circ(wx,KY+ROWS*s+s*.22,s*.15,'#aaa')}}
  else{ctx.fillStyle='rgba(60,30,20,.35)';rr(KX-s*.22,KY-s*.4,COLS*s+s*.44,ROWS*s+s*.6,s*.25);ctx.fill()}
  for(const t of G.tiles)drawFloor(t,time);
- const tgt=state==='play'&&G.cd<=0?targetTile():null,py=Math.floor(P.y);
+ const tgt=state==='play'&&G.cd<=0?withActor(G.P,()=>{const a=targetTile();return a&&wouldPick(a,G.P.hold)?a:(targetTile('use')||a)}):null,py=Math.floor(P.y);
  for(let y=0;y<ROWS;y++){for(let x=0;x<COLS;x++){const t=G.tiles[y*COLS+x];drawTile(t,time);if(t===tgt&&interactive(t)){const L=s*.18;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=Math.max(2,s*.08);rr(KX+t.x*s+1.5,KY+t.y*s-L+1.5,s-3,s-3,s*.12);ctx.stroke()}}
   for(const c of G.sous)if(Math.floor(c.y)===y&&c.y<G.P.y)drawSousChef(c,TS*1.1,time);
   if(y===py)drawChef(time);
@@ -782,7 +797,7 @@ function drawPlay(dim){const o=playLayout();LAY=o;TS=o.TS;KX=o.kit[0]+TS*.45;KY=
  // controls
  const j=o.joy,R=Math.min(j[2],j[3])*.36;const bx=JOY.active?JOY.bx:j[0]+j[2]/2,by=JOY.active?JOY.by:j[1]+j[3]/2;ctx.globalAlpha=.9;circ(bx,by,R,'rgba(255,255,255,.18)');ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=3;ctx.stroke();
  circ(bx+JOY.dx*R,by+JOY.dy*R,R*.45,'rgba(255,255,255,.75)');ctx.globalAlpha=1;reg('joy',j[0],j[1],j[2],j[3]);
- const h=G.P.hold,tt=withActor(G.P,()=>targetTile());
+ const h=G.P.hold,tt=withActor(G.P,()=>targetTile('use'));
  const useLbl=h&&h.k==='ext'?'Spray':tt&&tt.t==='sink'?'Wash':'Chop';
  ctrlCircle('pick',o.pick,'✋',h?'Drop':'Pick up','#2fae4a',KEYS.pickHeld);ctrlCircle('use',o.use,h&&h.k==='ext'?'🧯':tt&&tt.t==='sink'?'🧽':'🔪',useLbl,'#e88b2e',INP.use);
  const busy=G.sous.every(c=>c.task);ctrlCircle('asg',o.asg,'👨‍🍳',busy?'Busy':'Assign',busy?'#7d8aa0':'#4a7fd9',false);
