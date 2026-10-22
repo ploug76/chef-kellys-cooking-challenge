@@ -862,7 +862,7 @@ function sfx(n){if(!AC||muted||__T.silent)return;const t=AC.currentTime;switch(n
  case 'bonk':tone(200,t,.12,'square',.14,null,90);break;case 'splat':noise(t,.18,.4,900);tone(180,t,.15,'triangle',.2,null,80);break;
  case 'fanfare':[523,659,784,1046].forEach((f,i)=>tone(f,t+i*.12,.25,'square',.12));break}}
 // ---------- main loop ----------
-function update(dt){TIME+=dt;if(state==='play'&&G){const inp=window.__BOT?botInput():userInput();stepGame(dt,inp);INP.pick=false;INP.assign=false}}
+function update(dt){TIME+=dt;if(state==='play'&&G){const inp=window.__BOT?Object.assign({},botInput(),{assign:INP.assign}):userInput();stepGame(dt,inp);INP.pick=false;INP.assign=false}}
 function render(){ctx.setTransform(DPR,0,0,DPR,0,0);UIE=[];BTN=[];
  if(state==='title')drawTitle();else if(state==='map')drawMap();else if(state==='intro')drawIntro();else if(state==='how')drawHow();else if(state==='play'&&G)drawPlay(false);else if(state==='pause'&&G)drawPause();else if(state==='result'&&G)drawResult();else{state='title';drawTitle()}
  if(TOAST&&TIME<TOAST.until){const s=S();const lines=wrap(TOAST.t,Math.min(360,s.w-40),15);const h=lines.length*20+16,w=Math.min(380,s.w-24),x=s.l+(s.w-w)/2,y=s.b-h-60;ctx.fillStyle='rgba(30,15,8,.9)';rr(x,y,w,h,12);ctx.fill();lines.forEach((l,i)=>txt(null,l,x+w/2,y+18+i*20,15,'#fff',null,w-16,{outline:false}))}}
