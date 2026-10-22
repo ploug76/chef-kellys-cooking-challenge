@@ -36,25 +36,25 @@ const RECIPES={
 for(const k in RECIPES){RECIPES[k].need.sort();RECIPES[k].key=RECIPES[k].need.join('|')}
 const LEVELS=[
  {n:'Sunny Start',sub:'Chop and plate fresh salads',twist:'Tutorial kitchen. Chop lettuce and tomatoes, put them on a plate and serve!',
-  rec:['salad','salad','tomsalad'],time:150,plates:4,dirty:false,maxO:4,gap:16,first:2,stars:[50,125,195],chop:1.6,
+  rec:['salad','salad','tomsalad'],time:150,plates:4,dirty:false,maxO:4,gap:16,first:2,stars:[50,125,210],chop:1.6,
   g:['##l#t#W##    ','#.......#    ','C.......C    ','#..#.#..#    ','E.......T    ','#..#.#..#    ','#.......#    ','#...@...#    ','##P###P##    ']},
  {n:"Soup's On",sub:'Simmer soups, wash the dishes',twist:'Put 3 chopped veggies in a pot to make soup. Dirty plates come back: wash them in the sink!',
-  rec:['tsoup','osoup','tomsalad'],time:180,plates:3,dirty:true,maxO:4,gap:20,first:2,stars:[65,165,260],chop:1.6,
+  rec:['tsoup','osoup','tomsalad'],time:180,plates:3,dirty:true,maxO:4,gap:20,first:2,stars:[55,130,225],chop:1.6,
   g:['##t#o#l##    ','#.......W    ','S.......#    ','#..C#C..R    ','S.......#    ','#.......K    ','#...@...#    ','#.......#    ','#T#P#E###    ']},
  {n:'Slippery Grill',sub:'Burgers on an icy floor',twist:'Someone spilled the ice bucket! The blue floor is slippery. Fry chopped meat in a pan for burgers.',
-  rec:['burger','burger','tomsalad'],time:180,plates:4,dirty:true,maxO:4,gap:18,first:2,stars:[55,150,245],chop:1.5,
+  rec:['burger','burger','tomsalad'],time:180,plates:4,dirty:true,maxO:4,gap:18,first:2,stars:[40,95,160],chop:1.5,
   g:['#b#h#l#t#    ','#~~...~~W    ','F~~...~~#    ','#~.C#C.~R    ','F~~...~~#    ','#..~~~..K    ','#..~~~..#    ','#...@...#    ','#T#P#E###    ']},
  {n:'Conveyor Café',sub:'Send food down the belt',twist:'A wall splits the kitchen. Drop food on the conveyor belt to send it across, or run the long way around!',
-  rec:['burger','cburger','tomsalad'],time:200,plates:4,dirty:true,maxO:4,gap:18,first:2,stars:[60,145,195],chop:1.5,
-  g:['#bhc#F#F#    ','#...X...W    ','l...X...R    ','#..>>>..K    ','t...X...#    ','C...X...#    ','#...X...#    ','#...@...#    ','#T#C#E#P#    ']},
+  rec:['burger','cburger','tomsalad'],time:200,plates:4,dirty:true,maxO:4,gap:22,otime:1.2,first:2,stars:[45,105,180],chop:1.5,
+  g:['#lCt#bhc#    ','#...X...F    ','C...X...F    ','#..>>>..W    ','P...X...#    ','#...X...C    ','#...X...R    ','#...@...K    ','#T#E#C###    ']},
  {n:'Shifting Kitchen',sub:'The counters move!',twist:'The middle counters slide back and forth every few seconds. Use the gap to cross, and the counters to pass food.',
-  rec:['tsoup','burger','cburger'],time:215,plates:4,dirty:true,maxO:4,gap:20,first:2,stars:[55,135,225],chop:1.5,mover:{period:10},
+  rec:['tsoup','burger','cburger'],time:215,plates:4,dirty:true,maxO:4,gap:20,first:2,stars:[40,95,165],chop:1.5,mover:{period:10},
   g:['#thb#c#W#    ','#...X...#    ','S...M...R    ','#...M...K    ','F...X...#    ','#...N...#    ','C...N...#    ','#.@.X...#    ','#TCE#PFS#    ']},
  {n:'Food Truck Frenzy',sub:'Pizza on the open road',twist:'Kelly’s kitchen is on a food truck! Hold on during sharp turns. Bake pizzas in the oven.',
-  rec:['pizza','burger','cburger'],time:210,plates:4,dirty:true,maxO:4,gap:19,first:2,stars:[75,190,310],chop:1.5,truck:true,
+  rec:['pizza','burger','cburger'],time:210,plates:4,dirty:true,maxO:4,gap:19,first:2,stars:[55,130,225],chop:1.5,truck:true,
   g:['#dtchb#W#    ','#.......#    ','O.......R    ','#..C.C..K    ','O.......#    ','#.......#    ','F.......#    ','#...@...#    ','#TCP#E#F#    ']},
  {n:'Grand Finale',sub:'Everything, all at once!',twist:'The big night! Soups, deluxe burgers and pizzas, an icy patch, a conveyor, and hot stoves that burn fast.',
-  rec:['tsoup','msoup','dburger','pizza','mpizza'],time:255,plates:5,dirty:true,maxO:5,gap:20,first:2,otime:1.3,stars:[70,170,215],chop:1.4,burn:.7,
+  rec:['tsoup','msoup','dburger','pizza','mpizza'],time:255,plates:5,dirty:true,maxO:5,gap:20,first:2,otime:1.3,stars:[50,120,210],chop:1.4,burn:.7,
   g:['#dmtchbl#    ','O..~~~..W    ','#..~~~..S    ','S.#<<<#.R    ','#.#C#C#.K    ','O.......#    ','F.......#    ','#...@...F    ','#T#P#E#O#    ']},
 ];
 // burn grace after food is done: 10s on the first 3 levels of each group (time to fetch a plate), 6s later; a level may set warn
@@ -171,7 +171,7 @@ function serve(h,t){const cx=t.x+.5,cy=t.y+.3;if(h.k!=='plate'||!h.items.length)
  const key=plateKey(h);const o=G.orders.find(o=>RECIPES[o.r].key===key);
  if(!o){msg('Not on the order!',cx,cy+.6,'#ff8a8a');sfx('buzz');G.wrong++;return}
  const R=RECIPES[o.r],fr=Math.max(0,o.t/o.T),tip=Math.round(R.pts*0.5*Math.min(1,fr*1.5)),oldest=G.orders[0]===o?1:0;
- const pts=R.pts+tip;G.score+=pts;G.tips+=tip;G.served++;G.orders.splice(G.orders.indexOf(o),1);P_clear();
+ const pts=R.pts+tip;G.score+=pts;G.tips+=tip;G.served++;(G.servedR=G.servedR||{})[o.r]=(G.servedR[o.r]||0)+1;G.orders.splice(G.orders.indexOf(o),1);P_clear();
  msg('+'+pts+(tip?'  (tip '+tip+')':''),cx,cy+.6,'#7dff9a');sfx('ding');burst(cx,cy,'#ffe14a',14);
  G.returns.push({t:G.L.dirty?7:5});if(!G.orders.length)G.nextO=Math.min(G.nextO,1.5)}
 function P_clear(){ACT.hold=null}
@@ -259,7 +259,9 @@ function updateWorld(dt){
  for(const p of G.pops)p.t+=dt;G.pops=G.pops.filter(p=>p.t<1.6)}
 function stepGame(dt,inp){if(!G||G.done)return;G.dt=dt;
  if(G.cd>0){G.cd-=dt;if(G.cd<=0)sfx('go');moveP(dt,0,0);return}
- G.t+=dt;G.time-=dt;moveP(dt,inp.x,inp.y);
+ G.t+=dt;G.time-=dt;let mx=inp.x,my=inp.y;const Pn=G.P.nudge;
+ if(Pn){if(Math.hypot(mx,my)>.15)G.P.nudge=null;else{const ex=Pn.x+.5-G.P.x,ey=Pn.y+.5-G.P.y,d=Math.hypot(ex,ey);Pn.t-=dt;if(d<.1||Pn.t<=0){G.P.nudge=null;G.P.dir=Pn.face;G.P.fx=Pn.fx;G.P.fy=Pn.fy}else{mx=ex/d*Math.min(1,d*3+.3);my=ey/d*Math.min(1,d*3+.3)}}}
+ moveP(dt,mx,my);
  ACT=G.P;if(inp.pick){doPick()}
  if(inp.use)doUse(dt);else{G.P.act=0}
  if(inp.assign)assignTask();
@@ -546,7 +548,7 @@ const pick=(c)=>withActor(c,()=>doPick());
 function* act(c,t){if(!(yield* goTo(c,t)))return false;pick(c);yield;return true}
 function* useUntil(c,t,cond,maxT){if(!(yield* goTo(c,t)))return false;const e=G.t+(maxT||15);while(!cond()&&G.t<e){if(t.fire>0)break;withActor(c,()=>doUse(G.dt));yield}c.act=0;return cond()}
 function* putDown(c,near){if(!c.hold)return true;const t=freeCounterNear(near?near.x:c.x,near?near.y:c.y,c);if(!t){c.hold=null;return false}yield* act(c,t);return !c.hold}
-function* dropOnFloor(c){say(c,['Oops!','Butterfingers!','Whoops-a-daisy!'][Math.floor(rnd()*3)],2);sfx('splat');c.stats.chaos++;
+function* dropOnFloor(c){say(c,['Oops!','Butterfingers!','Whoops-a-daisy!'][Math.floor(rnd()*3)],2);sfx('splat');c.stats.chaos++;c.chaosDone=1;
  for(let i=0;i<12;i++)G.parts.push({x:c.x+(rnd()-.5)*.3,y:c.y,vx:(rnd()-.5)*3,vy:-1-rnd()*2,t:0,life:.6,col:c.hold&&c.hold.k==='f'?foodColor(c.hold.id):'#fff',r:.08});
  if(c.hold&&c.hold.k==='plate'){c.hold.items=[];yield* waitT(c,.6);yield* putDown(c);return}c.hold=null;yield* waitT(c,1)}
 function* getPlate(c){if(c.hold&&c.hold.k==='plate'&&!c.hold.items.length)return true;
@@ -556,22 +558,22 @@ function* getPlate(c){if(c.hold&&c.hold.k==='plate'&&!c.hold.items.length)return
 function* doWash(c,quick){const ret=findT(t=>t.t==='return'&&t.n>0)[0],sink=findT(t=>t.t==='sink')[0];if(!sink)return false;
  if(ret&&!c.hold){yield* act(c,ret);if(c.hold&&c.hold.k==='dirty')yield* act(c,sink)}
  if(!sink.n)return sink.clean>0;let slip=c.chaos==='slip';
- return yield* useUntil(c,sink,()=>{if(slip&&sink.wp>.5){slip=false;c.stun=2;c.stats.chaos++;say(c,'Whoa! Slippery soap!',2);sfx('bonk')}return quick?sink.clean>0:sink.n===0},20)}
+ return yield* useUntil(c,sink,()=>{if(slip&&sink.wp>.5){slip=false;c.stun=2;c.stats.chaos++;c.chaosDone=1;say(c,'Whoa! Slippery soap!',2);sfx('bonk')}return quick?sink.clean>0:sink.n===0},20)}
 function* taskChop(c,board){c.icon='chop';if(!(yield* goTo(c,board)))return say(c,"Can't reach it!");
- if(c.chaos==='wander'){c.stats.chaos++;yield* wander(c,3,['Ooh, a butterfly!','Is that a new spatula?','Back in a sec, Chef!'][c.i%3]);c.icon='chop'}
+ if(c.chaos==='wander'){c.stats.chaos++;c.chaosDone=1;yield* wander(c,3,['Ooh, a butterfly!','Is that a new spatula?','Back in a sec, Chef!'][c.i%3]);c.icon='chop'}
  const ok=yield* useUntil(c,board,()=>!(board.it&&board.it.k==='f'&&CHOPPABLE[board.it.id]),12);
  if(ok&&c.chaos==='drop'&&board.it&&board.it.k==='f'){yield* act(c,board);yield* waitT(c,.3);yield* dropOnFloor(c);return}
  say(c,ok?['Yes Chef!','Chopped!','Heard, Chef!'][Math.floor(rnd()*3)]:'Hmm?');if(ok)c.stats.ok++}
 function* taskPlate(c,st){c.icon='plate';const oven=st.t==='oven';
  if(oven){const e=G.t+30;while(st.it&&st.it.k==='plate'&&st.it.st==='raw'&&G.t<e){if(!(yield* goTo(c,st,4)))yield;else yield}
-  if(c.chaos==='burn'){c.stats.chaos++;yield* wander(c,7,'Mmm, smells good… what was I doing?');c.icon='plate'}
+  if(c.chaos==='burn'){c.stats.chaos++;c.chaosDone=1;yield* wander(c,7,'Mmm, smells good… what was I doing?');c.icon='plate'}
   if(!st.it||st.it.k!=='plate')return say(c,'Was that mine?');if(st.fire>0)return say(c,'FIRE! Not my fault!',2.4);
   yield* act(c,st);if(c.hold&&c.hold.items[0]==='burnt'){say(c,'Was that mine?',2);const tr=findT(t=>t.t==='trash')[0];if(tr)yield* act(c,tr)}
   const sv=findT(t=>t.t==='serve')[0];yield* putDown(c,sv);if(!c.hold){c.stats.ok++;say(c,'Pizza’s out!')}return}
  const v=st.it;if(!v||(v.k!=='pot'&&v.k!=='pan'))return say(c,'Nothing to plate!');
  if(!(yield* getPlate(c)))return say(c,'No plates, Chef!',2);
  const e=G.t+25;while(st.it===v&&v.st==='raw'&&G.t<e){if(!(yield* goTo(c,st,4)))yield;else yield}
- if(c.chaos==='burn'&&v.st==='done'){c.stats.chaos++;yield* wander(c,6.2,'Mmm, smells good… what was I doing?');c.icon='plate'}
+ if(c.chaos==='burn'&&v.st==='done'){c.stats.chaos++;c.chaosDone=1;yield* wander(c,6.2,'Mmm, smells good… what was I doing?');c.icon='plate'}
  if(st.it!==v||v.st==='raw'){yield* putDown(c);return say(c,'This pot needs more veggies!',2)}
  if(st.fire>0){yield* putDown(c);return say(c,'FIRE! Not my fault!',2.4)}
  if(v.st==='burnt'){say(c,'Was that mine?',2);yield* putDown(c);if(st.fire>0)return;yield* act(c,st);const tr=findT(t=>t.t==='trash')[0];if(c.hold&&tr)yield* act(c,tr);if(c.hold)yield* act(c,st);return}
@@ -603,12 +605,37 @@ function assignTask(){if(!G||G.done||G.cd>0)return;const P=G.P;const idle=G.sous
   else if((t.t==='sink'||t.t==='return')&&(t.n>0||findT(x=>x.t==='return'&&x.n>0).length))job=['wash',null];
   else if(t.t==='crate')job=['fetch',t.ing]}
  if(!job)job=autoTask();if(!job){say(c,'Nothing to do, Chef!');sfx('buzz');return}
- startTask(c,job[0],job[1])}
+ startTask(c,job[0],job[1]);
+ // Kelly is standing on the only spot the sous chef can work from: she steps one tile aside so the job can start
+ const jt=job[1]&&job[1].x!=null?job[1]:null;if(jt){const st=stands(jt),kx=Math.floor(P.x),ky=Math.floor(P.y);
+  if(st.length&&st.every(q=>q.x===kx&&q.y===ky)){const taken=new Set(G.sous.map(o=>tkey(o.x,o.y)));let best=null,bs=-1e9;
+   for(const [dx,dy] of DIRS){const n=tileAt(kx+dx,ky+dy);if(!walkable(n)||taken.has(tkey(n.x+.5,n.y+.5)))continue;const sc=-Math.hypot(n.x+.5-c.x,n.y+.5-c.y)*.01+(dx===DIRS[P.dir][0]&&dy===DIRS[P.dir][1]?-1:0);if(sc>bs){bs=sc;best=n}}
+   if(best){P.nudge={x:best.x,y:best.y,t:1.2,face:P.dir,fx:P.fx,fy:P.fy};msg('Making room!',P.x,P.y-1,'#9fe8ff')}}}}
 const CHAOS={station:['wander','burn'],chop:['wander','drop'],plate:['burn'],wash:['slip'],fetch:['wrong','drop']};
-function startTask(c,kind,arg){c.task=kind;c.tStart=G.t;c.est={chop:5,plate:6,wash:8,fetch:5,station:8}[kind]||6;c.tile=arg&&arg.x!=null?arg:null;c.bump=0;c.bumped=0;c.saidX=0;
+// real remaining-time estimate for a sous chef job (walk legs + chop/wash/cook time left), scaled by how long that job kind really took so far this level
+function sWalk(a,b){if(!a||!b)return 0;const st=b.t?stands(b):[{x:b.x,y:b.y}];const from=a.t?stands(a):[{x:Math.floor(a.x),y:Math.floor(a.y)}];if(!from.length||!st.length)return 1;
+ let n=1e9;for(const f of from){if(st.some(q=>q.x===f.x&&q.y===f.y)){n=0;break}let r=null;try{r=bfs(f.x,f.y,st,new Set())}catch(e){}n=Math.min(n,r&&r.path?r.path.length:Math.abs(f.x-b.x)+Math.abs(f.y-b.y))}
+ return n?n/2.9+.25:.15}
+function sousRaw(c){const k=c.task,t=c.tile,h=c.hold,ch=G.L.chop||1.6;
+ if(k==='chop'&&t){const it=t.it;return sWalk(c,t)+(it&&it.k==='f'&&CHOPPABLE[it.id]?(1-(it.cp||0))*ch:0)+.4}
+ if(k==='wash'){const sink=findT(x=>x.t==='sink')[0],ret=findT(x=>x.t==='return'&&x.n>0)[0];if(!sink)return 1;let n=sink.n,w=0;
+  if(h&&h.k==='dirty'){n+=h.n||1;w=sWalk(c,sink)}else if(ret){n+=ret.n;w=sWalk(c,ret)+sWalk(ret,sink)}else w=sWalk(c,sink);return w+Math.max(0,n*WASH_T-(sink.wp||0)*WASH_T)+.4}
+ if(k==='plate'&&t){const v=t.it,sv=findT(x=>x.t==='serve')[0],pl=findT(x=>x.t==='plates')[0];const kind=v&&(v.k==='plate'?'oven':v.k);
+  const cook=v&&v.st==='raw'?(1-(v.p||0))*(COOK_T[kind]||8):0;const fetch=(h&&h.k==='plate')||t.t==='oven'?sWalk(c,t):(pl?sWalk(c,pl)+sWalk(pl,t):sWalk(c,t));
+  return Math.max(cook+.3,fetch)+.6+sWalk(t,sv)}
+ if(k==='fetch'){const P=G.P,kp={x:Math.floor(P.x),y:Math.floor(P.y)},ing=c.fing;const bd=CHOPPABLE[ing]&&(t&&t.t==='board'?t:findT(x=>x.t==='board'&&!x.it&&x.fire<=0)[0]);
+  if(h&&h.k==='f'&&!CHOPPABLE[h.id])return sWalk(c,kp)+.3;if(h)return bd?sWalk(c,bd)+ch+.3:sWalk(c,kp)+.3;
+  if(bd&&bd.it&&bd.it.k==='f'&&CHOPPABLE[bd.it.id])return sWalk(c,bd)+(1-(bd.it.cp||0))*ch+.3;
+  const cr=findT(x=>x.t==='crate'&&x.ing===ing).sort((p,q)=>Math.hypot(p.x-c.x,p.y-c.y)-Math.hypot(q.x-c.x,q.y-c.y))[0];return sWalk(c,cr)+(bd?sWalk(cr,bd)+ch:sWalk(cr,kp))+.5}
+ return Math.max(1,(c.est0||8)-(G.t-c.tStart))}
+function sousETA(c){const K=G.etaK||(G.etaK={});const k=K[c.task]||1.05,raw=sousRaw(c);
+ // chaos detours not yet happened (wander/burn) add their known delay
+ const ch=c.chaos&&!c.chaosDone?({wander:3,burn:6.5,slip:2}[c.chaos]||0):0;return Math.max(1,raw*k+ch)}
+function sousLearn(c){if(!c.task||!(c.raw0>0)||c.chaos==='drop'||c.chaos==='wrong')return;const K=G.etaK||(G.etaK={}),real=G.t-c.tStart-(c.chaosDone?({wander:3,burn:6.5,slip:2}[c.chaos]||0):0),ratio=Math.max(.7,Math.min(2,real/c.raw0));K[c.task]=(K[c.task]||1.05)*.6+ratio*.4}
+function startTask(c,kind,arg){c.task=kind;c.tStart=G.t;c.est={chop:5,plate:6,wash:8,fetch:5,station:8}[kind]||6;c.est0=c.est;c.tile=arg&&arg.x!=null?arg:null;c.chaosDone=0;c.fing=kind==='fetch'?arg:null;c.bump=0;c.bumped=0;c.saidX=0;
  c.chaos=rnd()<0.27?CHAOS[kind][Math.floor(rnd()*CHAOS[kind].length)]:null;if(c.chaos===null&&rnd()<.08)c.bump=1;
  say(c,['Yes Chef!','On it!','Heard!','Right away!'][Math.floor(rnd()*4)],1.2);sfx('yes');
- c.gen=kind==='station'?taskStation(c,arg):kind==='chop'?taskChop(c,arg):kind==='plate'?taskPlate(c,arg):kind==='wash'?taskWash(c):taskFetch(c,arg);G.assigned=(G.assigned||0)+1}
+ c.raw0=0;try{c.raw0=sousRaw(c)}catch(e){}c.gen=kind==='station'?taskStation(c,arg):kind==='chop'?taskChop(c,arg):kind==='plate'?taskPlate(c,arg):kind==='wash'?taskWash(c):taskFetch(c,arg);G.assigned=(G.assigned||0)+1}
 function* idleGen(c){while(true){const P=G.P;if(Math.hypot(P.x-c.x,P.y-c.y)<.9){c.near+=G.dt;if(c.near>.5){c.near=0;const tx=Math.floor(c.x),ty=Math.floor(c.y);
    const opts=findT(t=>walkable(t)&&Math.abs(t.x-tx)+Math.abs(t.y-ty)<=2&&Math.hypot(t.x+.5-P.x,t.y+.5-P.y)>1.6);if(opts.length){const o=opts[Math.floor(rnd()*opts.length)];const r=bfs(tx,ty,[{x:o.x,y:o.y}],new Set([tkey(P.x,P.y)]));if(r)for(const p of r.path){let k=0;while(!sousStep(c,p.x,p.y,G.dt)&&k++<90)yield}}}}else c.near=0;c.moving=false;yield}}
 // sous chefs make way: if Kelly walks into a sous chef that is standing still, it hops to a free tile out of her way
@@ -623,7 +650,7 @@ function sousYield(c,dt){const P=G.P;if(c.hop){const ok=sousStep(c,c.hop.x,c.hop
 function updateSous(dt){for(const c of G.sous){if(c.sayT>0)c.sayT-=dt;if(c.stun>0)c.stun-=dt;
   if(c.yieldT>0)c.yieldT-=dt;if(c.stun<=0&&sousYield(c,dt))continue;
   if(c.gen){c.act=0;const px=c.x,py=c.y;const r=c.gen.next();
-   if(c.task&&!c.act&&Math.hypot(c.x-px,c.y-py)<1e-3){c.stillT=(c.stillT||0)+dt;if(c.stillT>4&&!(c.sayT>0)){say(c,'Waiting for you, Chef…',2.2);c.stillT=-1.5}}else c.stillT=0;if(r.done){c.gen=null;c.task=null;c.icon=null;c.act=0;c.tile=null;if(c.hold){const t=freeCounterNear(c.x,c.y,c);if(t){const s=stands(t);}c.idleDrop=1}}}
+   if(c.task&&!c.act&&Math.hypot(c.x-px,c.y-py)<1e-3){c.stillT=(c.stillT||0)+dt;if(c.stillT>4&&!(c.sayT>0)){say(c,'Waiting for you, Chef…',2.2);c.stillT=-1.5}}else c.stillT=0;if(r.done){sousLearn(c);c.gen=null;c.task=null;c.icon=null;c.act=0;c.tile=null;if(c.hold){const t=freeCounterNear(c.x,c.y,c);if(t){const s=stands(t);}c.idleDrop=1}}}
   else{if(c.hold){c.gen=(function*(){yield* putDown(c);c.icon=null})();c.task='tidy';continue}if(!c.idle)c.idle=idleGen(c);c.idle.next()}}}
 // ---------- autoplay bot (tests) ----------
 const BOT={on:false,inp:{x:0,y:0,pick:false,use:false,assign:false},gen:null,asm:null};
@@ -697,7 +724,7 @@ function botInput(){if(!BOT.gen)BOT.gen=G.L.group==='classic'?botMain():botExt()
 
 // ===== Extension API (see EXTEND.md). Modules p7_carnival.js / p8_fastfood.js / p9_cake.js register through window.CK =====
 const STN={},TILECH={},FOOD_DRAW={},FOOD_COL={},PLATEABLE=new Set(),CHOP_TO={},TRACKS={},GROUPS=[
- {id:'classic',n:'Classic Kitchen',col:'#e25c3a'},{id:'carnival',n:'Carnival Midway',col:'#e0439a'},{id:'fastfood',n:'Burgers & Fries',col:'#e88b2e'},{id:'cake',n:'Cake Bakery',col:'#8a5ad8'}];
+ {id:'classic',n:'Classic Kitchen',col:'#e25c3a'},{id:'carnival',n:'Carnival Midway',col:'#e0439a'},{id:'cake',n:'Cake Bakery',col:'#8a5ad8'},{id:'fastfood',n:'Burgers & Fries',col:'#e88b2e'}];
 LEVELS.forEach(L=>L.group=L.group||'classic');
 const CK=window.CK={
  // ---- items ----
@@ -1497,6 +1524,9 @@ window.__FF=[L1,L2,L3,L4,L5];
 
 }catch(e){(window.__ERR=window.__ERR||[]).push("p8_fastfood.js"+": "+e.message);console.error("p8_fastfood.js",e)}
 
+// v11 fair star targets (3★ ≤ ~60% / 2★ ≤ ~35% of the auto-player), applied by level name so module files stay untouched
+const STAR_TUNE={"Popcorn Stand": [50, 140, 245], "Corn Dog Alley": [70, 195, 350], "Cotton Candy Carousel": [50, 120, 205], "Fry-Day Frenzy": [65, 155, 265], "Ferris Wheel Feast": [110, 265, 460], "Starlight Stampede": [100, 245, 420], "Layer Cake Tower": [75, 215, 385], "Bakery Rush": [70, 195, 355], "Birthday Bash": [70, 200, 360], "Burger Shack": [60, 150, 270], "Tender Time": [75, 190, 300], "Combo Rush": [65, 155, 270], "Drive-Thru Dash": [80, 195, 330], "Fryer Frenzy": [75, 175, 305]};
+LEVELS.forEach(L=>{if(STAR_TUNE[L.n])L.stars=STAR_TUNE[L.n].slice()});
 // ===== screens, HUD, input, audio, main loop =====
 const SKEY='ckcc_save_v1';
 save=(()=>{try{const s=JSON.parse(localStorage.getItem(SKEY));if(s&&s.best)return s}catch(e){}return{best:{},stars:{},muted:false}})();
@@ -1678,12 +1708,16 @@ function drawPlay(dim){const o=playLayout(),bb=kBounds();LAY=o;TS=o.TS;KY=o.kit[
  const h=G.P.hold,tt=withActor(G.P,()=>targetTile('use'));
  const sd=tt&&STN[tt.t],useLbl=h&&h.k==='ext'?'Spray':tt&&tt.t==='sink'?'Wash':sd&&sd.useLabel?sd.useLabel:'Chop';
  ctrlCircle('pick',o.pick,'✋',h?'Drop':'Pick up','#2fae4a',KEYS.pickHeld);ctrlCircle('use',o.use,h&&h.k==='ext'?'🧯':tt&&tt.t==='sink'?'🧽':sd&&sd.useIcon?sd.useIcon:'🔪',useLbl,'#e88b2e',INP.use);
- const busy=G.sous.length&&G.sous.every(c=>c.task);let eta=0,fr=0;if(busy){const e=G.sous.map(c=>{const est=c.est||6,left=Math.max(1,est-(G.t-(c.tStart||G.t)));return [left,est]}).sort((a,b)=>a[0]-b[0])[0];eta=Math.ceil(e[0]);fr=Math.min(1,Math.max(0,1-e[0]/e[1]))}
+ const busy=G.sous.length&&G.sous.every(c=>c.task);let eta=0,fr=0;if(busy){const e=G.sous.map(c=>{let left=6;try{left=sousETA(c)}catch(_){}const el=G.t-(c.tStart||G.t);return [left,el+left]}).sort((a,b)=>a[0]-b[0])[0];eta=Math.ceil(e[0]);fr=Math.min(1,Math.max(0,1-e[0]/e[1]))}
  ctrlCircle('asg',o.asg,'👨‍🍳',busy?'Busy ~'+eta+'s':'Assign',busy?'#7d8aa0':'#4a7fd9',ASGHELD);
  if(busy){const [ax,ay,ar]=o.asg;ctx.strokeStyle='#ffd84a';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(ax,ay,ar+3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(.04,fr));ctx.stroke();ctx.lineCap='butt'}
  if(dim){UIE.length=reg0}
  if(G.cd>0){const t=G.cd>.8?'Ready…':'Cook!';txt(null,t,o.kit[0]+o.kit[2]/2,o.kit[1]+o.kit[3]/2,Math.min(64,TS*2),'#fff',null,o.kit[2],{oc:'#b4471d'})}
- if(G.fires>0&&Math.floor(TIME*4)%2===0){ctx.strokeStyle='rgba(255,60,30,.8)';ctx.lineWidth=6;ctx.strokeRect(o.kit[0]+3,o.kit[1]+3,o.kit[2]-6,o.kit[3]-6);{const kb=o.kit[1]+o.kit[3],room=(o.ctrl?o.ctrl[1]:S().b)-kb,fy=room>30?kb+room/2:kb-10;txt(null,'🔥 FIRE! Grab the extinguisher!',o.kit[0]+o.kit[2]/2,fy,18,'#ffe14a',null,o.kit[2]-8,{oc:'rgba(90,0,0,.85)'})}}}
+ if(G.fires>0&&Math.floor(TIME*4)%2===0){ctx.strokeStyle='rgba(255,60,30,.8)';ctx.lineWidth=6;ctx.strokeRect(o.kit[0]+3,o.kit[1]+3,o.kit[2]-6,o.kit[3]-6);{const kb=o.kit[1]+o.kit[3],room=(o.ctrl?o.ctrl[1]:S().b)-kb;
+  if(room>30)txt(null,'🔥 FIRE! Grab the extinguisher!',o.kit[0]+o.kit[2]/2,kb+room/2,18,'#ffe14a',null,o.kit[2]-8,{oc:'rgba(90,0,0,.85)'});
+  else if(o.joy){/* landscape: the side column (swipe area) holds the banner, never over a counter */const [jx,jy,jw,jh]=o.joy,cx=jx+jw/2,cy=jy+Math.min(jh/2,60);
+   ctx.fillStyle='rgba(90,0,0,.8)';rr(jx+2,cy-30,jw-4,60,12);ctx.fill();txt(null,'🔥 FIRE!',cx,cy-12,18,'#ffe14a',null,jw-12);txt(null,'Grab the extinguisher!',cx,cy+12,16,'#ffe14a',null,jw-12)}
+  else{const tp=o.kit[1]-6;txt(null,'🔥 FIRE! Grab the extinguisher!',o.kit[0]+o.kit[2]/2,Math.max(S().t+12,tp),18,'#ffe14a',null,o.kit[2]-8,{oc:'rgba(90,0,0,.85)'})}}}}
 function drawPause(){drawPlay(true);const p=panel(320,486),pad=16;txt('pt','Paused',p.x+p.w/2,p.y+34,30,'#fff',null,p.w-20,{oc:'#b4471d'});const bh=Math.min(52,(p.h-80-pad*6)/6),bw=p.w-2*pad;let y=p.y+66;
  button('resume',p.x+pad,y,bw,bh,'▶ Resume','#2fae4a',()=>go('play'));y+=bh+12;button('restart',p.x+pad,y,bw,bh,'↻ Restart','#e88b2e',()=>startLevel(G.li));y+=bh+12;
  button('pmap',p.x+pad,y,bw,bh,'Kitchen Map','#8a5a3c',()=>go('map'));y+=bh+12;button('phow',p.x+pad,y,bw,bh,'How to Play','#e0439a',()=>{howPage=0;go('how')});y+=bh+12;button('psnd',p.x+pad,y,bw,bh,muted?'🔇 Sound off':'🔊 Sound on','#4a6fd9',toggleMute);y+=bh+12;button('pkeep',p.x+pad,y,bw,bh,'Keep walking after swipe: '+(save.keepWalk?'ON':'OFF'),save.keepWalk?'#2f8a8a':'#7d8aa0',()=>{save.keepWalk=!save.keepWalk;persist()},{sz:17})}
