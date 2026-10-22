@@ -37,25 +37,25 @@ for(const k in RECIPES){RECIPES[k].need.sort();RECIPES[k].key=RECIPES[k].need.jo
 const LEVELS=[
  {n:'Sunny Start',sub:'Chop and plate fresh salads',twist:'Tutorial kitchen. Chop lettuce and tomatoes, put them on a plate and serve!',
   rec:['salad','salad','tomsalad'],time:150,plates:4,dirty:false,maxO:4,gap:16,first:2,stars:[50,125,195],chop:1.6,
-  g:['##l#t#C#C##W#','#...........#','#...........#','#...##.##...#','E...........T','#...##.##...#','#...........#','#.....@.....#','####P###P####']},
+  g:['##l#t#W##    ','#.......#    ','C.......C    ','#..#.#..#    ','E.......T    ','#..#.#..#    ','#.......#    ','#...@...#    ','##P###P##    ']},
  {n:"Soup's On",sub:'Simmer soups, wash the dishes',twist:'Put 3 chopped veggies in a pot to make soup. Dirty plates come back: wash them in the sink!',
   rec:['tsoup','osoup','tomsalad'],time:180,plates:3,dirty:true,maxO:4,gap:20,first:2,stars:[65,165,260],chop:1.6,
-  g:['###t#o#l#####','#...........W','S...........#','#...#####...R','S...#C#C#...#','#...........K','#.....@.....#','#...........#','#T##P####E###']},
+  g:['##t#o#l##    ','#.......W    ','S.......#    ','#..C#C..R    ','S.......#    ','#.......K    ','#...@...#    ','#.......#    ','#T#P#E###    ']},
  {n:'Slippery Grill',sub:'Burgers on an icy floor',twist:'Someone spilled the ice bucket! The blue floor is slippery. Fry chopped meat in a pan for burgers.',
-  rec:['burger','burger','tomsalad'],time:180,plates:4,dirty:true,maxO:4,gap:18,first:2,stars:[55,155,260],chop:1.5,
-  g:['##b#h#l#t##W#','#~~~.....~~~#','F~~~.....~~~R','#~~~#C#C#~~~#','F~~~.....~~~K','#....~~~....#','#....~~~....#','#.....@.....#','#T##P###E####']},
+  rec:['burger','burger','tomsalad'],time:180,plates:4,dirty:true,maxO:4,gap:18,first:2,stars:[55,150,245],chop:1.5,
+  g:['#b#h#l#t#    ','#~~...~~W    ','F~~...~~#    ','#~.C#C.~R    ','F~~...~~#    ','#..~~~..K    ','#..~~~..#    ','#...@...#    ','#T#P#E###    ']},
  {n:'Conveyor Café',sub:'Send food down the belt',twist:'A wall splits the kitchen. Drop food on the conveyor belt to send it across, or run the long way around!',
-  rec:['burger','cburger','tomsalad'],time:200,plates:4,dirty:true,maxO:4,gap:18,first:2,stars:[65,170,285],chop:1.5,
-  g:['#b#h#c#F#F#W#','#.....X.....#','l.....X.....R','#....>>>....K','t.....X.....#','#.....X.....#','C.....X.....#','#...........#','#T#C#E##P####']},
+  rec:['burger','cburger','tomsalad'],time:200,plates:4,dirty:true,maxO:4,gap:18,first:2,stars:[60,145,195],chop:1.5,
+  g:['#bhc#F#F#    ','#...X...W    ','l...X...R    ','#..>>>..K    ','t...X...#    ','C...X...#    ','#...X...#    ','#...@...#    ','#T#C#E#P#    ']},
  {n:'Shifting Kitchen',sub:'The counters move!',twist:'The middle counters slide back and forth every few seconds. Use the gap to cross, and the counters to pass food.',
-  rec:['tsoup','burger','cburger'],time:215,plates:4,dirty:true,maxO:4,gap:20,first:2,stars:[55,140,250],chop:1.5,mover:{period:10},
-  g:['##t#h##b#c#W#','#.....X.....#','S.....M.....R','#.....M.....K','F.....X.....#','#.....N.....#','C.....N.....#','#.....X.....#','#T#C#P#E#F#S#']},
+  rec:['tsoup','burger','cburger'],time:215,plates:4,dirty:true,maxO:4,gap:20,first:2,stars:[55,135,225],chop:1.5,mover:{period:10},
+  g:['#thb#c#W#    ','#...X...#    ','S...M...R    ','#...M...K    ','F...X...#    ','#...N...#    ','C...N...#    ','#.@.X...#    ','#TCE#PFS#    ']},
  {n:'Food Truck Frenzy',sub:'Pizza on the open road',twist:'Kelly’s kitchen is on a food truck! Hold on during sharp turns. Bake pizzas in the oven.',
   rec:['pizza','burger','cburger'],time:210,plates:4,dirty:true,maxO:4,gap:19,first:2,stars:[75,190,310],chop:1.5,truck:true,
-  g:['#d#t#c#h#b#W#','#...........#','O...........R','#...##.##...K','O...#C.C#...#','#...........#','F...........#','#.....@.....#','#T#P#E##F#C##']},
+  g:['#dtchb#W#    ','#.......#    ','O.......R    ','#..C.C..K    ','O.......#    ','#.......#    ','F.......#    ','#...@...#    ','#TCP#E#F#    ']},
  {n:'Grand Finale',sub:'Everything, all at once!',twist:'The big night! Soups, deluxe burgers and pizzas, an icy patch, a conveyor, and hot stoves that burn fast.',
-  rec:['tsoup','msoup','dburger','pizza','mpizza'],time:240,plates:5,dirty:true,maxO:5,gap:18,first:2,stars:[80,220,360],chop:1.4,burn:.7,
-  g:['#d#m#t#c#h#b#','#...~~~~~...W','O...~~~~~...#','#..#<<<<#...R','S..#C#C#S...K','l...........#','O...........#','#.....@.....#','#T#P#E##F#F##']},
+  rec:['tsoup','msoup','dburger','pizza','mpizza'],time:255,plates:5,dirty:true,maxO:5,gap:20,first:2,otime:1.3,stars:[70,170,215],chop:1.4,burn:.7,
+  g:['#dmtchbl#    ','O..~~~..W    ','#..~~~..S    ','S.#<<<#.R    ','#.#C#C#.K    ','O.......#    ','F.......#    ','#...@...F    ','#T#P#E#O#    ']},
 ];
 // burn grace after food is done: 10s on the first 3 levels of each group (time to fetch a plate), 6s later; a level may set warn
 function warnT(){if(!G||!G.L)return WARN_T;const L=G.L;if(L.warn)return L.warn;const gi=LEVELS.filter(l=>(l.group||'classic')===(L.group||'classic')).indexOf(L);return gi<3?10:9}
@@ -91,7 +91,7 @@ const walkable=t=>!!t&&(t.t==='floor'||t.t==='ice');
 const interactive=t=>!!t&&!(t.t==='floor'||t.t==='ice'||t.t==='wall'||t.t==='void');
 function addOrder(force){const L=G.L;if(G.orders.length>=L.maxO)return;
  let r=force,tries=0;if(!r)do{r=L.rec[Math.floor(rnd()*L.rec.length)];tries++}while(tries<6&&G.recentR.slice(-2).every(x=>x===r)&&G.recentR.length>=2);
- G.recentR.push(r);const T=RECIPES[r].time*(G.li===0?1.4:1);G.orders.push({r,t:T,T,id:++G.ordSeq,born:G.t})}
+ G.recentR.push(r);const T=RECIPES[r].time*(G.li===0?1.4:(L.otime||1));G.orders.push({r,t:T,T,id:++G.ordSeq,born:G.t})}
 // deterministic-ish rng so bot runs are repeatable
 let SEED=12345;function rnd(){SEED=(SEED*1103515245+12345)&0x7fffffff;return SEED/0x7fffffff}
 function plateKey(p){return p.items.slice().sort().join('|')}
@@ -478,10 +478,10 @@ function drawKitchen(time){const s=TS,P=G.P;ctx.save();
  // backdrop
  if(G.L.backdrop){G.L.backdrop(ctx,KX,KY,s,time)}
  else if(G.L.truck){// road + truck body
-  ctx.fillStyle='#585e66';ctx.fillRect(KX-s*.8,KY-s*.8,COLS*s+s*1.6,ROWS*s+s*1.6);ctx.fillStyle='#f2c94c';const off=(G.roadX*s)%(s*2);for(let x=KX-s*2+off;x<KX+COLS*s+s;x+=s*2){ctx.fillRect(x,KY-s*.55,s,s*.12);ctx.fillRect(x,KY+ROWS*s+s*.45,s,s*.12)}
-  ctx.fillStyle='#e04b3b';rr(KX-s*.3,KY-s*.42,COLS*s+s*.6,ROWS*s+s*.62,s*.3);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(KX-s*.3,KY+ROWS*s*.5,COLS*s+s*.6,s*.12);
-  for(const wx of [KX+s*1.5,KX+COLS*s-s*1.5]){circ(wx,KY+ROWS*s+s*.22,s*.35,'#222');circ(wx,KY+ROWS*s+s*.22,s*.15,'#aaa')}}
- else{ctx.fillStyle='rgba(60,30,20,.35)';rr(KX-s*.22,KY-s*.4,COLS*s+s*.44,ROWS*s+s*.6,s*.25);ctx.fill()}
+  ctx.fillStyle='#585e66';ctx.fillRect(KX-s*.8,KY-s*.8,kBounds().c*s+s*1.6,kBounds().r*s+s*1.6);ctx.fillStyle='#f2c94c';const off=(G.roadX*s)%(s*2);for(let x=KX-s*2+off;x<KX+kBounds().c*s+s;x+=s*2){ctx.fillRect(x,KY-s*.55,s,s*.12);ctx.fillRect(x,KY+kBounds().r*s+s*.45,s,s*.12)}
+  ctx.fillStyle='#e04b3b';rr(KX-s*.3,KY-s*.42,kBounds().c*s+s*.6,kBounds().r*s+s*.62,s*.3);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(KX-s*.3,KY+kBounds().r*s*.5,kBounds().c*s+s*.6,s*.12);
+  for(const wx of [KX+s*1.5,KX+kBounds().c*s-s*1.5]){circ(wx,KY+kBounds().r*s+s*.22,s*.35,'#222');circ(wx,KY+kBounds().r*s+s*.22,s*.15,'#aaa')}}
+ else{ctx.fillStyle='rgba(60,30,20,.35)';rr(KX-s*.22,KY-s*.4,kBounds().c*s+s*.44,kBounds().r*s+s*.6,s*.25);ctx.fill()}
  for(const t of G.tiles)drawFloor(t,time);
  const tgt=state==='play'&&G.cd<=0?withActor(G.P,()=>{const a=targetTile();return a&&wouldPick(a,G.P.hold)?a:(targetTile('use')||a)}):null,py=Math.floor(P.y);
  for(let y=0;y<ROWS;y++){for(let x=0;x<COLS;x++){const t=G.tiles[y*COLS+x];drawTile(t,time);if(t===tgt&&interactive(t)){const L=s*.18,pu=.5+.5*Math.sin(time*7);ctx.fillStyle='rgba(255,236,80,'+(.16+.12*pu)+')';rr(KX+t.x*s+1,KY+t.y*s-L+1,s-2,s-2,s*.14);ctx.fill();ctx.strokeStyle='rgba(40,20,0,.7)';ctx.lineWidth=Math.max(4,s*.13);ctx.stroke();ctx.strokeStyle='rgb(255,'+Math.round(220+30*pu)+',70)';ctx.lineWidth=Math.max(2.5,s*.08);ctx.stroke()}}
@@ -515,22 +515,22 @@ const findT=f=>G.tiles.filter(f);
 // ---------- Sous chefs ----------
 const SOUS_LOOK=[{name:'Pip',skin:'#c98d64',hair:'#2a1d16',stache:1},{name:'Dot',skin:'#f3d3b8',hair:'#f2cf63',stache:0}];
 function nearestFloor(x,y){let b=null,bd=1e9;for(const t of G.tiles)if(walkable(t)){const d=(t.x-x)**2+(t.y-y)**2;if(d<bd&&!(Math.abs(t.x+.5-G.P.x)<1&&Math.abs(t.y+.5-G.P.y)<1)){bd=d;b=t}}return b}
-function makeSous(n){G.sous=[];const spots=[[2,6],[10,6]];for(let i=0;i<n;i++){const f=nearestFloor(spots[i][0],spots[i][1]);
+function makeSous(n){G.sous=[];const spots=[[2,6],[6,6]];for(let i=0;i<n;i++){const f=nearestFloor(spots[i][0],spots[i][1]);
  G.sous.push({i,look:SOUS_LOOK[i],x:f.x+.5,y:f.y+.5,dir:0,hold:null,walk:0,moving:false,act:0,spray:0,chop:0,task:null,gen:null,icon:null,say:null,sayT:0,stun:0,near:0,home:{x:f.x,y:f.y},stats:{ok:0,chaos:0}})}
  ACT=G.P}
 function say(c,t,d){c.say=t;c.sayT=d||1.8}
 function sousStep(c,tx,ty,dt){// move toward tile center, blocked by Kelly
  const P=G.P,cx=tx+.5,cy=ty+.5,dx=cx-c.x,dy=cy-c.y,d=Math.hypot(dx,dy),sp=2.9*dt;
  if(d<1e-3)return true;const nx=c.x+dx/d*Math.min(sp,d),ny=c.y+dy/d*Math.min(sp,d);
- if(Math.hypot(nx-P.x,ny-P.y)<.55&&!c.bump){c.moving=false;c.blockT=(c.blockT||0)+dt;return false}
+ {const nd=Math.hypot(nx-P.x,ny-P.y);if(nd<.55&&nd<=Math.hypot(c.x-P.x,c.y-P.y)&&!c.bump){c.moving=false;c.blockT=(c.blockT||0)+dt;return false}}
  if(c.bump&&Math.hypot(nx-P.x,ny-P.y)<.6){P.vx+=dx/d*5;P.vy+=dy/d*5;if(!c.bumped){c.bumped=1;say(c,'Coming through!');sfx('bonk')}}
  c.x=nx;c.y=ny;c.walk+=sp*2.4;c.moving=true;c.blockT=0;if(Math.abs(dx)>Math.abs(dy))c.dir=dx<0?2:3;else c.dir=dy<0?1:0;return Math.hypot(cx-c.x,cy-c.y)<.02}
 function* goTo(c,t,maxT){let tEnd=G.t+(maxT||12),waited=0;let stuck=0;
  while(G.t<tEnd){if(c.stun>0){c.moving=false;yield;continue}
   const st0=stands(t);if(!st0.length)return false;const tx=Math.floor(c.x),ty=Math.floor(c.y),kx=Math.floor(G.P.x),ky=Math.floor(G.P.y);
   // never queue on the tile Kelly is standing on: use another side, or wait politely until she steps away
-  const st=st0.filter(s=>!(s.x===kx&&s.y===ky));
-  if(!st.length){c.moving=false;if(waited<15){waited+=G.dt;tEnd+=G.dt}if(!c.saidW){c.saidW=1;say(c,'After you, Chef!',1.8)}yield;continue}c.saidW=0;
+  const st=st0.filter(s=>!(s.x===kx&&s.y===ky)&&!(c.yieldT>0&&Math.hypot(s.x+.5-G.P.x,s.y+.5-G.P.y)<1.6));
+  if(!st.length){c.moving=false;if(waited<8){waited+=G.dt;tEnd+=G.dt}if(!c.saidW){c.saidW=1;say(c,'After you, Chef!',1.8)}yield;continue}c.saidW=0;
   const here=st.find(s=>s.x===tx&&s.y===ty);if(here&&Math.hypot(c.x-tx-.5,c.y-ty-.5)<.05){c.dir=here.face;c.moving=false;return true}
   const avoid=new Set([tkey(G.P.x,G.P.y)]);G.sous.forEach(o=>{if(o!==c)avoid.add(tkey(o.x,o.y))});
   let r=bfs(tx,ty,st,avoid)||bfs(tx,ty,st,null);if(!r){c.moving=false;stuck+=G.dt;if(stuck>3)return false;yield;continue}
@@ -605,20 +605,30 @@ function assignTask(){if(!G||G.done||G.cd>0)return;const P=G.P;const idle=G.sous
  if(!job)job=autoTask();if(!job){say(c,'Nothing to do, Chef!');sfx('buzz');return}
  startTask(c,job[0],job[1])}
 const CHAOS={station:['wander','burn'],chop:['wander','drop'],plate:['burn'],wash:['slip'],fetch:['wrong','drop']};
-function startTask(c,kind,arg){c.task=kind;c.tile=arg&&arg.x!=null?arg:null;c.bump=0;c.bumped=0;c.saidX=0;
+function startTask(c,kind,arg){c.task=kind;c.tStart=G.t;c.est={chop:5,plate:6,wash:8,fetch:5,station:8}[kind]||6;c.tile=arg&&arg.x!=null?arg:null;c.bump=0;c.bumped=0;c.saidX=0;
  c.chaos=rnd()<0.27?CHAOS[kind][Math.floor(rnd()*CHAOS[kind].length)]:null;if(c.chaos===null&&rnd()<.08)c.bump=1;
  say(c,['Yes Chef!','On it!','Heard!','Right away!'][Math.floor(rnd()*4)],1.2);sfx('yes');
  c.gen=kind==='station'?taskStation(c,arg):kind==='chop'?taskChop(c,arg):kind==='plate'?taskPlate(c,arg):kind==='wash'?taskWash(c):taskFetch(c,arg);G.assigned=(G.assigned||0)+1}
 function* idleGen(c){while(true){const P=G.P;if(Math.hypot(P.x-c.x,P.y-c.y)<.9){c.near+=G.dt;if(c.near>.5){c.near=0;const tx=Math.floor(c.x),ty=Math.floor(c.y);
    const opts=findT(t=>walkable(t)&&Math.abs(t.x-tx)+Math.abs(t.y-ty)<=2&&Math.hypot(t.x+.5-P.x,t.y+.5-P.y)>1.6);if(opts.length){const o=opts[Math.floor(rnd()*opts.length)];const r=bfs(tx,ty,[{x:o.x,y:o.y}],new Set([tkey(P.x,P.y)]));if(r)for(const p of r.path){let k=0;while(!sousStep(c,p.x,p.y,G.dt)&&k++<90)yield}}}}else c.near=0;c.moving=false;yield}}
+// sous chefs make way: if Kelly walks into a sous chef that is standing still, it hops to a free tile out of her way
+function sousYield(c,dt){const P=G.P;if(c.hop){const ok=sousStep(c,c.hop.x,c.hop.y,dt);c.hop.t-=dt;if(ok||c.hop.t<=0)c.hop=null;return !!c.hop||ok}
+ const dx=c.x-P.x,dy=c.y-P.y,d=Math.hypot(dx,dy),sp=Math.hypot(P.vx,P.vy);const toward=sp>.4&&(dx*P.vx+dy*P.vy)/(d*sp+1e-6)>.2;
+ if(d<.8&&toward&&!c.moving&&!(c.act>0)){c.pushT=(c.pushT||0)+dt}else c.pushT=Math.max(0,(c.pushT||0)-dt*2);
+ if(c.pushT<.25)return false;c.pushT=0;const tx=Math.floor(c.x),ty=Math.floor(c.y),kx=Math.floor(P.x),ky=Math.floor(P.y),fx=P.x+P.vx*.6,fy=P.y+P.vy*.6;
+ const taken=new Set(G.sous.filter(o=>o!==c).map(o=>tkey(o.x,o.y)));let best=null,bs=-1e9;
+ for(const [ox,oy] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]){const t=tileAt(tx+ox,ty+oy);if(!t||!walkable(t)||(t.x===kx&&t.y===ky)||taken.has(tkey(t.x+.5,t.y+.5)))continue;
+  if(ox&&oy&&(!walkable(tileAt(tx+ox,ty))||!walkable(tileAt(tx,ty+oy))))continue;const mx=t.x+.5-c.x,my=t.y+.5-c.y;if(mx*dx+my*dy<-.05)continue;const sc=Math.hypot(t.x+.5-P.x,t.y+.5-P.y)+Math.hypot(t.x+.5-fx,t.y+.5-fy)*.5-(ox&&oy?.3:0);if(sc>bs){bs=sc;best=t}}
+ if(!best)return false;c.hop={x:best.x,y:best.y,t:1.2};c.yieldT=2.5;if(!(c.sayT>0))say(c,['Sorry, Chef!','Coming around!','Excuse me!'][Math.floor(rnd()*3)],1.2);return true}
 function updateSous(dt){for(const c of G.sous){if(c.sayT>0)c.sayT-=dt;if(c.stun>0)c.stun-=dt;
+  if(c.yieldT>0)c.yieldT-=dt;if(c.stun<=0&&sousYield(c,dt))continue;
   if(c.gen){c.act=0;const px=c.x,py=c.y;const r=c.gen.next();
    if(c.task&&!c.act&&Math.hypot(c.x-px,c.y-py)<1e-3){c.stillT=(c.stillT||0)+dt;if(c.stillT>4&&!(c.sayT>0)){say(c,'Waiting for you, Chef…',2.2);c.stillT=-1.5}}else c.stillT=0;if(r.done){c.gen=null;c.task=null;c.icon=null;c.act=0;c.tile=null;if(c.hold){const t=freeCounterNear(c.x,c.y,c);if(t){const s=stands(t);}c.idleDrop=1}}}
   else{if(c.hold){c.gen=(function*(){yield* putDown(c);c.icon=null})();c.task='tidy';continue}if(!c.idle)c.idle=idleGen(c);c.idle.next()}}}
 // ---------- autoplay bot (tests) ----------
 const BOT={on:false,inp:{x:0,y:0,pick:false,use:false,assign:false},gen:null,asm:null};
 function* bGo(t,maxT){const P=G.P,e=G.t+(maxT||10);let last=[P.x,P.y],lt=G.t;
- while(G.t<e){const st=stands(t);if(!st.length)return false;const tx=Math.floor(P.x),ty=Math.floor(P.y);const here=st.find(s=>s.x===tx&&s.y===ty);
+ while(G.t<e){const st=stands(t);if(!st.length){BOT.inp.x=BOT.inp.y=0;yield;return false}const tx=Math.floor(P.x),ty=Math.floor(P.y);const here=st.find(s=>s.x===tx&&s.y===ty);
   if(here&&Math.hypot(P.x-tx-.5,P.y-ty-.5)<.22){const d=DIRS[here.face];for(let i=0;i<3;i++){BOT.inp.x=d[0];BOT.inp.y=d[1];yield}BOT.inp.x=BOT.inp.y=0;return true}
   const avoid=new Set(G.sous.map(c=>tkey(c.x,c.y)));const r=bfs(tx,ty,st,avoid)||bfs(tx,ty,st,null);if(!r){BOT.inp.x=BOT.inp.y=0;yield;continue}
   const n=r.path.length?r.path[0]:{x:tx,y:ty};let dx=n.x+.5-P.x,dy=n.y+.5-P.y;if(r.path.length>1&&Math.hypot(dx,dy)<.35){const n2=r.path[1];dx=n2.x+.5-P.x;dy=n2.y+.5-P.y}
@@ -633,11 +643,12 @@ function* bUse(t,cond,maxT){if(!(yield* bGo(t)))return false;const e=G.t+(maxT||
 const need3=o=>{const R=RECIPES[o.r];return R.raw||R.need};
 function ingOf(n){return n==='patty'?'meat':n.startsWith('soup_')?n.slice(5):n.replace('_c','')}
 function* bPut(near){const P=G.P;const t=freeCounterNear(near?near.x:P.x,near?near.y:P.y,P);if(t){yield* bAct(t);if(!P.hold)return t}return null}
-function* botMain(){const P=G.P;
+function* botMain(){const P=G.P;let spinT=-1,spin=0;
  while(true){if(!G||G.done||G.cd>0){BOT.inp.x=BOT.inp.y=0;yield;continue}
-  const h=P.hold,fire=findT(t=>t.fire>0)[0],sink=findT(t=>t.t==='sink')[0],trash=findT(t=>t.t==='trash')[0],serveT=findT(t=>t.t==='serve')[0];
+  if(G.t===spinT){if(++spin>40){spin=0;window.__SPIN=(window.__SPIN||0)+1;if(window.__SPINLOG)console.log('SPIN',G.t.toFixed(1),JSON.stringify(P.hold),G.orders[0]&&G.orders[0].r,P.x.toFixed(2),P.y.toFixed(2));BOT.inp.x=BOT.inp.y=0;yield;continue}}else{spinT=G.t;spin=0}
+  const h=P.hold,fires=findT(t=>t.fire>0),fire=fires.find(t=>stands(t).length)||fires[0],sink=findT(t=>t.t==='sink')[0],trash=findT(t=>t.t==='trash')[0],serveT=findT(t=>t.t==='serve')[0];
   if(fire){if(h&&h.k!=='ext'){yield* bPut();continue}if(!h){const ex=findT(t=>t.it&&t.it.k==='ext')[0];if(ex){yield* bAct(ex);continue}}
-   if(h&&h.k==='ext'){yield* bUse(fire,()=>fire.fire<=0,6);continue}yield;continue}
+   if(h&&h.k==='ext'){let aim=fire;if(!stands(fire).length){aim=DIRS.map(d=>tileAt(fire.x+d[0],fire.y+d[1])).find(n=>n&&stands(n).length)||fire}yield* bUse(aim,()=>fire.fire<=0,6);continue}yield;continue}
   if(h&&h.k==='ext'){yield* bPut();continue}
   if(h&&h.k==='dirty'){yield* bAct(sink);continue}
   const o=G.orders[0];if(!o){BOT.inp.x=BOT.inp.y=0;yield;continue}
@@ -650,7 +661,8 @@ function* botMain(){const P=G.P;
    if(h.items[0]==='burnt'||!h.items.every(i=>raw.includes(i))&&h.items.length){yield* bAct(trash);continue}
    if(pizza&&h.items.slice().sort().join('|')===raw.join('|')){const ov=oven.find(t=>!t.it&&t.fire<=0);if(ov){yield* bAct(ov);continue}}
    if(soup&&!h.items.length){const pd=pot.find(t=>t.it.st==='done'&&vesselResult(t.it)===R.need[0]);if(pd){yield* bAct(pd);continue}}
-   const t=yield* bPut(serveT);if(t)BOT.asm=t;continue}
+   const t=yield* bPut(serveT);if(t){BOT.asm=t;continue}
+   if(!h.items.length){const ps=findT(x=>x.t==='plates')[0];if(ps){yield* bAct(ps);continue}}BOT.inp.x=BOT.inp.y=0;for(let i=0;i<20;i++)yield;continue}
   if(h&&(h.k==='pot'||h.k==='pan')){if(h.st==='done'&&asm){yield* bAct(asm);continue}if(h.st==='burnt'||(h.st==='done'&&!asm)){if(h.st==='burnt'){yield* bAct(trash);continue}}
    const st=findT(t=>t.t==='stove'&&!t.it&&t.fire<=0)[0];if(st){yield* bAct(st);continue}yield* bPut();continue}
   if(h&&h.k==='f'){const id=h.id;
@@ -771,8 +783,8 @@ function routeHeld(h,missing,W,asm){// where should the held food go?
  return null}
 function* botExt(){const P=G.P;let lastT=-1,spin=0;
  while(true){if(G&&G.t===lastT){if(++spin>40){spin=0;BOT.inp.x=BOT.inp.y=0;yield;continue}}else{lastT=G?G.t:-1;spin=0}if(!G||G.done||G.cd>0){BOT.inp.x=BOT.inp.y=0;yield;continue}
-  const h=P.hold,fire=findT(t=>t.fire>0)[0],sink=findT(t=>t.t==='sink')[0],trash=findT(t=>t.t==='trash')[0],serveT=findT(t=>t.t==='serve')[0];
-  if(fire){if(h&&h.k!=='ext'){yield* bPut();continue}if(!h){const ex=findT(t=>t.it&&t.it.k==='ext')[0];if(ex){yield* bAct(ex);continue}}if(h&&h.k==='ext'){yield* bUse(fire,()=>fire.fire<=0,6);continue}yield;continue}
+  const h=P.hold,fires=findT(t=>t.fire>0),fire=fires.find(t=>stands(t).length)||fires[0],sink=findT(t=>t.t==='sink')[0],trash=findT(t=>t.t==='trash')[0],serveT=findT(t=>t.t==='serve')[0];
+  if(fire){if(h&&h.k!=='ext'){yield* bPut();continue}if(!h){const ex=findT(t=>t.it&&t.it.k==='ext')[0];if(ex){yield* bAct(ex);continue}}if(h&&h.k==='ext'){let aim=fire;if(!stands(fire).length){aim=DIRS.map(d=>tileAt(fire.x+d[0],fire.y+d[1])).find(n=>n&&stands(n).length)||fire}yield* bUse(aim,()=>fire.fire<=0,6);continue}yield;continue}
   if(h&&h.k==='ext'){yield* bPut();continue}
   if(h&&h.k==='dirty'){yield* bAct(sink);continue}
   if(G.L.bot&&(yield* G.L.bot()))continue;
@@ -1397,6 +1409,94 @@ cake_lv({n:'Birthday Bash',sub:'Candles, sprinkles and a party!',color:'#2fae4a'
 
 }catch(e){(window.__ERR=window.__ERR||[]).push("p9_cake.js"+": "+e.message);console.error("p9_cake.js",e)}
 
+// ---- module p8_fastfood.js ----
+try{
+// ===== p8_fastfood.js: Burgers & Fries (5 levels): griddle, deep fryer, soda fountain, drive-thru =====
+(function(){
+const D=CK.draw;const X=()=>CK.ctx;
+function sticks(n,r,col,edge,h,ang){const c=X();for(let i=0;i<n;i++){const dx=(i-(n-1)/2)*r*.34;c.save();c.translate(dx,0);c.rotate((i-(n-1)/2)*(ang||.12));c.fillStyle=col;D.rr(-r*.13,-h*r,r*.26,h*r*1.6,r*.08);c.fill();c.strokeStyle=edge;c.stroke();c.restore()}}
+CK.addFood('potato',{name:'Potato',color:'#b98a52',chop:'potato_c',draw(x,y,s,r){D.ell(0,0,r*1.15,r*.85,'#b98a52');const c=X();c.strokeStyle='#7a5530';c.stroke();D.circ(-r*.4,-r*.2,r*.09,'#7a5530');D.circ(r*.3,r*.25,r*.08,'#7a5530');D.circ(r*.45,-r*.3,r*.07,'#7a5530')}});
+CK.addFood('potato_c',{name:'Cut potato',color:'#f3e2b0',draw(x,y,s,r){sticks(5,r,'#f6e8bd','#b9a06a',.75)}});
+CK.addFood('fries',{name:'Fries',color:'#ffcc33',draw(x,y,s,r){sticks(6,r,'#ffd34a','#c98a1a',.95,.16);const c=X();c.fillStyle='#e5392a';c.beginPath();c.moveTo(-r*.95,-r*.05);c.lineTo(r*.95,-r*.05);c.lineTo(r*.7,r*1.05);c.lineTo(-r*.7,r*1.05);c.closePath();c.fill();c.strokeStyle='#8a1a12';c.stroke();D.circ(0,r*.48,r*.24,'#ffe14a')}});
+CK.addFood('chicken',{name:'Raw tenders',color:'#f2b8a8',draw(x,y,s,r){const c=X();for(let i=0;i<3;i++){c.save();c.rotate(-.5+i*.5);D.ell(0,-r*.2,r*.28,r*.8,'#f4c2b3');c.strokeStyle='#c98576';c.stroke();c.restore()}}});
+CK.addFood('tenders',{name:'Tenders',color:'#d98b2b',draw(x,y,s,r){const c=X();for(let i=0;i<3;i++){c.save();c.rotate(-.55+i*.55);D.ell(0,-r*.2,r*.32,r*.85,'#d98b2b');c.strokeStyle='#8a4f12';c.stroke();D.circ(-r*.08,-r*.45,r*.06,'#f2b45a');D.circ(r*.1,-r*.05,r*.05,'#f2b45a');c.restore()}}});
+CK.addFood('mozz',{name:'Cheese sticks (raw)',color:'#fff6d8',draw(x,y,s,r){sticks(3,r*1.25,'#fffbe8','#c9b98a',.6,.3)}});
+CK.addFood('mozz_f',{name:'Cheese sticks',color:'#e0a03a',draw(x,y,s,r){sticks(3,r*1.25,'#e7a640','#8a5512',.6,.3);D.circ(r*.5,-r*.6,r*.12,'#fff3b0')}});
+CK.addFood('cup',{name:'Cup',color:'#f4f4f4',draw(x,y,s,r){const c=X();c.fillStyle='#fafafa';c.beginPath();c.moveTo(-r*.7,-r*.85);c.lineTo(r*.7,-r*.85);c.lineTo(r*.5,r);c.lineTo(-r*.5,r);c.closePath();c.fill();c.strokeStyle='#999';c.stroke();c.fillStyle='#e5392a';c.fillRect(-r*.62,-r*.2,r*1.24,r*.3)}});
+CK.addFood('soda',{name:'Soda',color:'#e5392a',draw(x,y,s,r){const c=X();c.strokeStyle='#ff6fae';c.lineWidth=Math.max(1.5,r*.18);c.beginPath();c.moveTo(r*.1,-r*1.05);c.lineTo(r*.4,-r*1.6);c.stroke();c.lineWidth=Math.max(1,s*.03);
+ c.fillStyle='#e5392a';c.beginPath();c.moveTo(-r*.75,-r*.9);c.lineTo(r*.75,-r*.9);c.lineTo(r*.52,r);c.lineTo(-r*.52,r);c.closePath();c.fill();c.strokeStyle='#7a120c';c.stroke();D.ell(0,-r*.95,r*.78,r*.2,'#fafafa');c.stroke();D.circ(0,r*.1,r*.26,'#fff')}});
+
+CK.recipe('ff_cburger',{n:'Cheeseburger',need:['bun','cheese_c','patty'],pts:45,time:95});
+CK.recipe('ff_fries',{n:'Fries',need:['fries'],pts:30,time:75});
+CK.recipe('ff_tenders',{n:'Chicken Tenders',need:['tenders'],pts:30,time:75});
+CK.recipe('ff_mozz',{n:'Cheese Sticks',need:['mozz_f'],pts:30,time:75});
+CK.recipe('ff_combo',{n:'Burger Combo',need:['bun','cheese_c','patty','fries'],pts:75,time:125});
+CK.recipe('ff_tcombo',{n:'Tender Combo',need:['tenders','fries','soda'],pts:70,time:120});
+CK.recipe('ff_snack',{n:'Snack Box',need:['mozz_f','soda'],pts:50,time:100});
+
+// ---- stations ----
+CK.station('fryer',{colors:['#9aa3ad','#5d6670'],icon:'chop',
+ proc:{mode:'cook',time:6,burn:true,warn:6.5,fireT:2.6,cap:1,doneMsg:'Crispy!',rules:[{in:['potato_c'],out:'fries'},{in:['chicken'],out:'tenders'},{in:['mozz'],out:'mozz_f'}]},
+ draw(t,x,y,s,time){const c=X();c.fillStyle='#3e454d';D.rr(x+s*.1,y+s*.12,s*.8,s*.7,s*.08);c.fill();const hot=t.pin&&t.pin.length&&t.st==='idle';
+  c.fillStyle=t.st==='burnt'?'#4a3010':'#e8b23a';D.rr(x+s*.16,y+s*.2,s*.68,s*.54,s*.06);c.fill();
+  if(hot||t.st==='done'){for(let i=0;i<5;i++){const bx=x+s*(.25+((i*.37+time*.9)%1)*.5),by=y+s*(.3+((i*.53)%1)*.38);D.circ(bx,by,s*.035+Math.sin(time*9+i)*s*.012,'rgba(255,248,200,.85)')}}
+  c.strokeStyle='#cfd5db';c.lineWidth=Math.max(1.5,s*.04);c.beginPath();c.moveTo(x+s*.5,y+s*.2);c.lineTo(x+s*.5,y+s*.02);c.lineTo(x+s*.72,y+s*.02);c.stroke();c.lineWidth=1}});
+CK.station('griddle',{colors:['#77808a','#4d555d'],icon:'chop',
+ proc:{mode:'cook',time:6,burn:true,warn:7,fireT:2.6,cap:1,doneMsg:'Sizzled!',rules:[{in:['meat'],out:'patty'}]},
+ draw(t,x,y,s,time){const c=X();c.fillStyle='#22262a';D.rr(x+s*.08,y+s*.1,s*.84,s*.74,s*.06);c.fill();c.strokeStyle='#555';c.stroke();
+  if(t.pin&&t.pin.length&&t.st==='idle'&&Math.floor(time*4)%2)D.circ(x+s*.3,y+s*.25,s*.04,'rgba(255,255,255,.6)')}});
+CK.station('soda',{colors:['#d8453a','#9c2a22'],icon:'chop',
+ proc:{mode:'hold',time:1.4,cap:1,sfx:'pop',rules:[{in:['cup'],out:'soda'}]},
+ draw(t,x,y,s,time){const c=X();c.fillStyle='#c0c7ce';D.rr(x+s*.14,y-s*.18,s*.72,s*.42,s*.08);c.fill();c.strokeStyle='#666';c.stroke();
+  ['#e5392a','#3a7be5','#7dd04a'].forEach((col,i)=>{D.circ(x+s*(.3+i*.2),y-s*.02,s*.07,col)});c.fillStyle='#555';c.fillRect(x+s*.25,y+s*.22,s*.5,s*.05)}});
+
+const FL={h:{crate:'meat'},c:{crate:'cheese'},b:{crate:'bun'},p:{crate:'potato'},k:{crate:'chicken'},z:{crate:'mozz'},u:{crate:'cup'},
+ G:{st:'griddle'},Y:{st:'fryer'},D:{st:'soda'}};
+
+// ---- backdrops ----
+function diner(ctx,KX,KY,s,time){const bb=kBounds(),nc=bb.c-((CK.G&&CK.G.L.padR)||0),w=nc*s,h=bb.r*s;ctx.fillStyle='#7a2a20';ctx.fillRect(KX-s*.6,KY-s*.6,w+s*1.2,h+s*1.2);
+ ctx.fillStyle='#fff';for(let i=0;i<26;i++){ctx.fillStyle=i%2?'#f6f1e7':'#d8453a';ctx.fillRect(KX-s*.6+i*(w+s*1.2)/26,KY-s*.6,(w+s*1.2)/26+1,s*.35)}
+ ctx.fillStyle='#e8dcc8';ctx.fillRect(KX,KY,w,h);for(let y=0;y<bb.r;y++)for(let x=0;x<nc;x++)if((x+y)%2){ctx.fillStyle='#2b2b33';ctx.fillRect(KX+x*s,KY+y*s,s,s)}
+ ctx.fillStyle='#ffe14a';ctx.font='bold '+Math.round(s*.32)+'px sans-serif';ctx.textAlign='center';ctx.fillText('🍔 KELLY\'S BURGERS 🍟',KX+w/2,KY-s*.18)}
+function driveBD(ctx,KX,KY,s,time){diner(ctx,KX,KY,s,time);const x=KX+(CK.G.L.laneX||12)*s;ctx.fillStyle='#3a3d44';ctx.fillRect(x,KY-s*.6,s*1.6,9*s+s*1.2);
+ ctx.strokeStyle='#ffe14a';ctx.setLineDash([s*.3,s*.3]);ctx.lineWidth=Math.max(2,s*.06);ctx.beginPath();ctx.moveTo(x+s*1.05,KY-s*.6);ctx.lineTo(x+s*1.05,KY+9.6*s);ctx.stroke();ctx.setLineDash([]);ctx.lineWidth=1;
+ ctx.fillStyle='#fff';ctx.font='bold '+Math.round(s*.2)+'px sans-serif';ctx.textAlign='center';ctx.save();ctx.translate(x+s*.5,KY+2*s);ctx.rotate(Math.PI/2);ctx.fillText('DRIVE-THRU ▼',0,0);ctx.restore()}
+const CARCOL=['#3a7be5','#7dd04a','#ffb12a','#c46ee8','#ff6fae','#2ec4b6'];
+function cars(G){const E=G.ext;E.cars=E.cars||{};const win=E.winY||4;G.orders.forEach((o,i)=>{const c=E.cars[o.id]||(E.cars[o.id]={y:-1.5,col:CARCOL[o.id%CARCOL.length],gone:false});c.ty=win-i*1.15;c.o=o});
+ for(const k in E.cars){const c=E.cars[k];if(!G.orders.includes(c.o)){c.gone=true;c.ty=11}}}
+function carTick(G,dt){cars(G);const E=G.ext;for(const k in E.cars){const c=E.cars[k];c.y+=Math.sign(c.ty-c.y)*Math.min(Math.abs(c.ty-c.y),dt*(c.gone?5:3));if(c.gone&&c.y>10.5)delete E.cars[k]}
+ const o=G.orders[0];if(o&&o.t/o.T<.25){E.honk=(E.honk||0)-dt;if(E.honk<=0){E.honk=4;CK.msg('HONK! 📯',(G.L.laneX||12)+.4,(E.winY||4)-.4,'#ffe14a');CK.sfx('buzz')}}}
+function carDraw(ctx,KX,KY,s,time){const E=CK.G.ext;if(!E.cars)return;for(const k in E.cars){const c=E.cars[k],x=KX+((CK.G.L.laneX||12)+.08)*s,y=KY+c.y*s,w=s*.84,h=s*1.05;
+ ctx.fillStyle='rgba(0,0,0,.25)';CK.draw.rr(x+3,y+3,w,h,s*.2);ctx.fill();ctx.fillStyle=c.col;CK.draw.rr(x,y,w,h,s*.2);ctx.fill();ctx.strokeStyle='#222';ctx.lineWidth=2;ctx.stroke();
+ ctx.fillStyle='#bfe6ff';CK.draw.rr(x+w*.14,y+h*.58,w*.72,h*.24,s*.06);ctx.fill();CK.draw.rr(x+w*.14,y+h*.14,w*.72,h*.18,s*.06);ctx.fill();
+ ctx.fillStyle='#ffe98a';ctx.fillRect(x+w*.1,y+h*.93,w*.2,h*.06);ctx.fillRect(x+w*.7,y+h*.93,w*.2,h*.06);
+ if(!c.gone&&c.o){const fr=Math.max(0,c.o.t/c.o.T);CK.draw.bar(x+w/2,y-s*.12,w,fr,fr<.3?'#ff5a3a':'#5fdc5a')}ctx.lineWidth=1}}
+
+const L1=CK.level({group:'fastfood',n:'Burger Shack',sub:'Cheeseburgers & fries',music:'kitchen',
+ twist:'Welcome to Kelly\'s Burgers! Sizzle patties on the griddle, chop cheese, and cut potatoes for the DEEP FRYER. Grab food before it burns, or the fryer catches fire!',
+ rec:['ff_cburger','ff_fries','ff_cburger','ff_fries'],time:180,plates:4,maxO:3,gap:20,first:1,stars:[60,150,240],legend:FL,backdrop:diner,
+ g:["#hcbGW#Y#    ","#.......#    ","p.......K    ","#.......R    ","C..#E#..#    ","#.......C    ","#...@...P    ","#.......#    ","##T######    "]});
+const L2=CK.level({group:'fastfood',n:'Tender Time',sub:'Tenders, fries & cheese sticks',music:'kitchen',
+ twist:'Everything goes in the fryer today! Two fryers, three snacks. Keep an eye on the ⚠ - hot oil burns fast.',
+ rec:['ff_tenders','ff_fries','ff_mozz','ff_tenders','ff_fries'],time:180,plates:4,maxO:3,gap:17,first:2,stars:[75,190,290],legend:FL,backdrop:diner,
+ g:["#kpzY#WY#    ","#.......#    ","#.......K    ","C.......R    ","#..#E#..#    ","#.......#    ","#...@...P    ","#.......#    ","##T#C####    "]});
+const L3=CK.level({group:'fastfood',n:'Combo Rush',sub:'Meal deals with soda',music:'kitchen',
+ twist:'COMBOS! A burger combo is a cheeseburger with fries on one plate. Fill cups at the soda fountain (hold 🔪 Use). Big combos = big points.',
+ rec:['ff_combo','ff_tcombo','ff_cburger','ff_fries','ff_combo'],time:210,plates:4,maxO:3,gap:20,first:2,stars:[85,220,340],legend:FL,backdrop:diner,
+ g:["#hcbGWYY#    ","#.......#    ","p.......K    ","k.......R    ","u..#E#..#    ","#.......C    ","D...@...P    ","#.......#    ","##T#C####    "]});
+const L4=CK.level({group:'fastfood',n:'Drive-Thru Dash',sub:'Cars are waiting!',music:'kitchen',
+ twist:'The DRIVE-THRU is open! Every ticket is a car in line. Serve them at the window before they honk and drive off.',
+ rec:['ff_cburger','ff_tcombo','ff_fries','ff_snack','ff_tenders'],time:210,plates:4,maxO:3,gap:18,first:2,stars:[85,220,330],legend:FL,backdrop:driveBD,drawOver:carDraw,tick:carTick,laneX:8,padR:1,init(G){G.ext.winY=4},
+ g:["#hcbGYY#     ","#......R     ","p......K     ","k......T     ","u..#E#.W     ","z......#     ","D...@..P     ","C......#     ","##C#####     "]});
+const L5=CK.level({group:'fastfood',n:'Fryer Frenzy',sub:'Lunch rush, hot oil!',music:'kitchen',burn:.8,sous:2,
+ twist:'The lunch rush! Three fryers, two sous chefs and a long drive-thru line. The oil is extra hot today, so keep that extinguisher handy!',
+ rec:['ff_combo','ff_tcombo','ff_snack','ff_cburger','ff_mozz','ff_fries'],time:230,plates:5,maxO:4,gap:16,first:2,stars:[100,260,400],legend:FL,backdrop:driveBD,drawOver:carDraw,tick:carTick,laneX:8,padR:1,init(G){G.ext.winY=4},
+ g:["#hcbGGY#     ","#......R     ","p......T     ","k......K     ","u..#E#.W     ","z......Y     ","D...@..P     ","C......Y     ","##C#####     "]});
+window.__FF=[L1,L2,L3,L4,L5];
+})();
+
+}catch(e){(window.__ERR=window.__ERR||[]).push("p8_fastfood.js"+": "+e.message);console.error("p8_fastfood.js",e)}
+
 // ===== screens, HUD, input, audio, main loop =====
 const SKEY='ckcc_save_v1';
 save=(()=>{try{const s=JSON.parse(localStorage.getItem(SKEY));if(s&&s.best)return s}catch(e){}return{best:{},stars:{},muted:false}})();
@@ -1520,11 +1620,11 @@ function drawHow(){carnivalBG();const s=S(),p=panel(Math.min(480,s.w-16),Math.mi
 // ---------- play layout ----------
 let LAY=null;
 function kBounds(){if(!G)return{x0:0,y0:0,c:COLS,r:ROWS};if(G.bb&&G.bb.L===G.L)return G.bb;let x0=COLS,x1=-1,y0=ROWS,y1=-1;for(const t of G.tiles)if(t.t!=='void'){x0=Math.min(x0,t.x);x1=Math.max(x1,t.x);y0=Math.min(y0,t.y);y1=Math.max(y1,t.y)}
- if(x1<0)return{x0:0,y0:0,c:COLS,r:ROWS};return G.bb={L:G.L,x0,y0,c:x1-x0+1,r:y1-y0+1}}
+ if(x1<0)return{x0:0,y0:0,c:COLS,r:ROWS};x1+=(G.L.padR||0);return G.bb={L:G.L,x0,y0,c:x1-x0+1,r:y1-y0+1}}
 function playLayout(){const bb=kBounds(),BC=bb.c,BR=bb.r;const s=S(),port=s.h>s.w*1.05,pad=6;const o={port};
  if(port){const sb=46;o.pause=[s.l+pad,s.t+pad,sb,sb];o.mute=[s.r-pad-sb,s.t+pad,sb,sb];const pw=(s.w-2*pad-2*sb-24)/2;o.score=[s.l+pad+sb+8,s.t+pad+3,pw,sb-6];o.timer=[s.l+pad+sb+16+pw,s.t+pad+3,pw,sb-6];
   const shortP=s.h<720,th=Math.max(shortP?70:76,Math.min(shortP?78:104,s.w/3.8));o.tk=[s.l+pad,s.t+pad+sb+6,s.w-2*pad,th];const ctrlH=Math.max(shortP?140:150,Math.min(250,s.h*(shortP?.22:.25)));o.ctrl=[s.l,s.b-ctrlH,s.w,ctrlH];
-  const ky=o.tk[1]+th+6,kh=o.ctrl[1]-6-ky,vw=s.w-2*pad;o.TS=Math.floor(Math.min(kh/(BR+.9),46,vw/(BC+.9)));/* fit: every station always on screen (no camera scroll) */const kw=o.TS*(BC+.9),khh=o.TS*(BR+.9);
+  const ky=o.tk[1]+th+6,kh=o.ctrl[1]-6-ky,vw=s.w-2*pad;o.mx=.2;o.TS=Math.floor(Math.min(kh/(BR+.9),56,vw/(BC+.4)));/* fit: every station always on screen (no camera scroll) */const kw=o.TS*(BC+.4),khh=o.TS*(BR+.9);
   if(kw<=vw)o.kit=[s.l+(s.w-kw)/2,ky+(kh-khh)/2,kw,khh];else{o.kit=[s.l+pad,ky+(kh-khh)/2,vw,khh];o.world=kw}
   const r1=Math.min((ctrlH-16)/3.5,(s.w*.62-14)/4.3,58);o.pick=[s.r-pad-r1-4,s.b-pad-r1-6,r1];o.use=[o.pick[0]-r1*2.2,o.pick[1]-r1*.45,r1];const r2=Math.max(20,Math.min(r1*.76,(o.pick[1]-r1-10-o.ctrl[1])/2));o.asg=[o.pick[0]+r1-r2,o.pick[1]-r1-5-r2,r2];
   o.joy=[s.l+pad,s.b-ctrlH+pad,Math.max(60,o.use[0]-o.use[2]-14-s.l-pad),ctrlH-pad*2]}
@@ -1561,7 +1661,7 @@ let CAMX=0,CAMT=0,CAMLV=null;
 function drawPlay(dim){const o=playLayout(),bb=kBounds();LAY=o;TS=o.TS;KY=o.kit[1]+TS*.55-bb.y0*TS;let cam=0;
  if(o.world){const vw=o.kit[2],max=o.world-vw,want=Math.max(0,Math.min(max,(G.P.x-bb.x0+.45)*TS-vw/2)),dtc=Math.min(1,Math.max(0,TIME-CAMT));
   if(CAMLV!==G||G.cd>0||window.__MANUAL)CAMX=want;else CAMX+=(want-CAMX)*(1-Math.exp(-dtc*5));CAMX=Math.max(0,Math.min(max,CAMX));cam=CAMX}CAMT=TIME;CAMLV=G;
- KX=o.kit[0]+TS*.45-cam-bb.x0*TS;
+ KX=o.kit[0]+TS*(o.mx||.45)-cam-bb.x0*TS;
  ctx.fillStyle=G.L.truck?'#7fb3d5':'#5b3a2e';ctx.fillRect(0,0,W,H);if(!G.L.truck){ctx.globalAlpha=.15;bgKitchen();ctx.globalAlpha=1}else{ctx.fillStyle='#8fc46a';ctx.fillRect(0,H*.55,W,H*.45)}
  ctx.save();if(o.world){ctx.beginPath();ctx.rect(o.kit[0],o.kit[1]-4,o.kit[2],o.kit[3]+8);ctx.clip()}drawKitchen(TIME);
  if(o.world){const fw=Math.min(26,TS*.7);for(const [x0,dirn,show] of [[o.kit[0],1,cam>2],[o.kit[0]+o.kit[2],-1,cam<o.world-o.kit[2]-2]]){if(!show)continue;const g=ctx.createLinearGradient(x0,0,x0+dirn*fw,0);g.addColorStop(0,'rgba(40,20,10,.55)');g.addColorStop(1,'rgba(40,20,10,0)');ctx.fillStyle=g;ctx.fillRect(dirn>0?x0:x0-fw,o.kit[1]-4,fw,o.kit[3]+8);
@@ -1578,7 +1678,9 @@ function drawPlay(dim){const o=playLayout(),bb=kBounds();LAY=o;TS=o.TS;KY=o.kit[
  const h=G.P.hold,tt=withActor(G.P,()=>targetTile('use'));
  const sd=tt&&STN[tt.t],useLbl=h&&h.k==='ext'?'Spray':tt&&tt.t==='sink'?'Wash':sd&&sd.useLabel?sd.useLabel:'Chop';
  ctrlCircle('pick',o.pick,'✋',h?'Drop':'Pick up','#2fae4a',KEYS.pickHeld);ctrlCircle('use',o.use,h&&h.k==='ext'?'🧯':tt&&tt.t==='sink'?'🧽':sd&&sd.useIcon?sd.useIcon:'🔪',useLbl,'#e88b2e',INP.use);
- const busy=G.sous.every(c=>c.task);ctrlCircle('asg',o.asg,'👨‍🍳',busy?'Busy':'Assign',busy?'#7d8aa0':'#4a7fd9',ASGHELD);
+ const busy=G.sous.length&&G.sous.every(c=>c.task);let eta=0,fr=0;if(busy){const e=G.sous.map(c=>{const est=c.est||6,left=Math.max(1,est-(G.t-(c.tStart||G.t)));return [left,est]}).sort((a,b)=>a[0]-b[0])[0];eta=Math.ceil(e[0]);fr=Math.min(1,Math.max(0,1-e[0]/e[1]))}
+ ctrlCircle('asg',o.asg,'👨‍🍳',busy?'Busy ~'+eta+'s':'Assign',busy?'#7d8aa0':'#4a7fd9',ASGHELD);
+ if(busy){const [ax,ay,ar]=o.asg;ctx.strokeStyle='#ffd84a';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(ax,ay,ar+3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(.04,fr));ctx.stroke();ctx.lineCap='butt'}
  if(dim){UIE.length=reg0}
  if(G.cd>0){const t=G.cd>.8?'Ready…':'Cook!';txt(null,t,o.kit[0]+o.kit[2]/2,o.kit[1]+o.kit[3]/2,Math.min(64,TS*2),'#fff',null,o.kit[2],{oc:'#b4471d'})}
  if(G.fires>0&&Math.floor(TIME*4)%2===0){ctx.strokeStyle='rgba(255,60,30,.8)';ctx.lineWidth=6;ctx.strokeRect(o.kit[0]+3,o.kit[1]+3,o.kit[2]-6,o.kit[3]-6);{const kb=o.kit[1]+o.kit[3],room=(o.ctrl?o.ctrl[1]:S().b)-kb,fy=room>30?kb+room/2:kb-10;txt(null,'🔥 FIRE! Grab the extinguisher!',o.kit[0]+o.kit[2]/2,fy,18,'#ffe14a',null,o.kit[2]-8,{oc:'rgba(90,0,0,.85)'})}}}
