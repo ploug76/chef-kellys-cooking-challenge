@@ -1597,8 +1597,8 @@ function drawResult(){drawPlay(true);const r=RES,p=panel(380,RES&&RES.sous?352:3
  const sx=SAMPLE&&r.stars&&r.li+1>=SAMPLE_LEVELS&&r.li+1<LEVELS.length;button('next',p.x+pad+2*bw+20,by,bw,bh,sx?'Unlock ▶':'Next ▶',nx||sx?'#2fae4a':'#9a8f88',()=>{if(nx){sel=r.li+1;go('intro')}else if(sx)window.__smpWant=1},{dis:!(nx||sx)})}
 function finishLevel(){const li=G.li,score=G.score,st=starsFor(li,score);const best=score>(save.best[li]||0);if(best)save.best[li]=score;if(st>(save.stars[li]||0))save.stars[li]=st;persist();
  const so={ok:0,chaos:0};G.sous.forEach(c=>{so.ok+=c.stats.ok;so.chaos+=c.stats.chaos});RES={li,score,stars:st,best,served:G.served,tips:G.tips,missed:G.missed,sous:G.assigned?so:null};state='result';sfx(st?'fanfare':'miss')}
-let prevState=null;function go(s){prevState=state;state=s;try{window.__dock&&__dock.tick()}catch(e){}BTNDOWN=null;JOY.active=false;JOY.dx=JOY.dy=0;INP.use=false;AUTO=null;ASGHELD=false;KEYS.pickHeld=false;for(const k in PTR)delete PTR[k];if(s==='play'&&!G)state='map'}
-function startLevel(i){SEED=1000+i*7919;buildLevel(i);BOT.gen=null;BOT.asm=null;ACT=G.P;state='play';JOY.active=false;sfx('go');try{window.__dock&&__dock.tick()}catch(e){}}
+let prevState=null;function go(s){prevState=state;if(prevState==='result'&&s!=='result'){try{window.PALB&&PALB.isOpen()&&PALB.close()}catch(e){}}state=s;try{window.__dock&&__dock.tick()}catch(e){}BTNDOWN=null;JOY.active=false;JOY.dx=JOY.dy=0;INP.use=false;AUTO=null;ASGHELD=false;KEYS.pickHeld=false;for(const k in PTR)delete PTR[k];if(s==='play'&&!G)state='map'}
+function startLevel(i){if(state==='result'){try{window.PALB&&PALB.isOpen()&&PALB.close()}catch(e){}}SEED=1000+i*7919;buildLevel(i);BOT.gen=null;BOT.asm=null;ACT=G.P;state='play';JOY.active=false;sfx('go');try{window.__dock&&__dock.tick()}catch(e){}}
 // ---------- input ----------
 let AUTO=null,SWIPED=false,ASGHELD=false;const SW_DEAD=8,SW_STEP=22,SW_FULL=30;
 const JOY={active:false,id:null,bx:0,by:0,dx:0,dy:0},INP={pick:false,use:false,useId:null,assign:false},KEYS={},PTR={};
