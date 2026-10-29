@@ -2172,4 +2172,23 @@ window.PALB=api})();
 #palbTabs button{min-height:48px!important;font-size:16px!important}
 #palbList li{min-height:30px;height:auto!important;font-size:16px!important}
 </style>
+<!-- gamepad:start -->
+<script src="gamepad.js?v=2"></script>
+<script>
+try{HOW.push(['🎮 Controller','Xbox, PlayStation or Switch controllers work (USB or Bluetooth, on a computer or paired to your phone).\nLeft stick or D-pad: walk.\nA: Pick up / Drop.\nX (hold): Chop / Use / spray.\nY: Assign a sous chef.\nStart: pause. Select: sound on/off.\nMenus: D-pad to pick, A to select, B to go back.'])}catch(e){}
+GamepadSupport.init({
+ keys:{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',a:'Space',x:'KeyE',rt:'KeyE',y:'KeyQ',start:function(p){if(p&&state==='play')go('pause');else if(p&&state==='pause')go('play')},back:function(p){if(p)toggleMute()}},
+ noRepeat:['a','y','start','back'],
+ ignoreSel:'#dock,#mute,#inst,#ios,.tb,#dockHint',
+ menu:function(){return !!document.querySelector('#palbOv.on,#smpLock.on')||state!=='play';},
+ items:GamepadSupport.list(function(){return document.querySelector('#palbOv.on,#smpLock.on')?[]:BTN.filter(function(b){return state!=='play'||(b.id!=='pause'&&b.id!=='mute')});},{scale:1}),
+ isPaused:function(){return state==='pause'},
+ back:function(){if(document.querySelector('#palbOv.on,#smpLock.on'))return false;
+  if(state==='pause'){go('play');return true}
+  var b=BTN.find(function(q){return /^(hdone|back|rmap)$/.test(q.id)});if(b){b.cb();return true}
+  return true;},
+ hint:{text:'🎮 Controller: stick to walk · A pick/drop · hold X chop/use · Y assign · Start pause',when:function(){return state==='title'&&!document.querySelector('#palbOv.on,#smpLock.on')}}
+});
+</script>
+<!-- gamepad:end -->
 </body></html>
