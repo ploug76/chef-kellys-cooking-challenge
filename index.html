@@ -318,16 +318,19 @@ function face(x,y,r,side,blink){// side: 0 front, 1 right-facing
  // nose
  ctx.strokeStyle=SKIN_D;ctx.lineWidth=Math.max(.6,r*.05);ctx.beginPath();if(side){ctx.moveTo(x+r*.85,y);ctx.quadraticCurveTo(x+r*1.03,y+r*.15,x+r*.85,y+r*.2)}else{ctx.moveTo(x-r*.06,y+r*.18);ctx.quadraticCurveTo(x,y+r*.24,x+r*.06,y+r*.18)}ctx.stroke()}
 // Kelly sprite. (x,y)=feet center, s=tile size, dir 0 down 1 up 2 left 3 right, pose 0 idle/walk 1 chop 2 spray 3 wash, carry bool
+/* leg rig (Grey Heart leg check, Oct 2026): legs swing/step with the walk phase, amplitude eases to standing when stopped */
+function legAmp(o,mv){const now=performance.now()/1000,dt=Math.min(.1,Math.max(0,now-(o._lt||now)));o._lt=now;o._la=(o._la||0)+((mv?1:0)-(o._la||0))*Math.min(1,dt*10);return o._la<.01?0:o._la}
+const LEGK={};
+function chefLegs(s,side,ph,amp,col,shoe,lw,len,y0){const a=Math.sin(ph)*amp,c=Math.cos(ph)*amp;
+ if(side){for(const k of [-1,1]){const ang=k*a*.55,lift=Math.max(0,k*c)*s*.035;ctx.save();ctx.translate(0,y0-lift);ctx.rotate(-ang);ctx.fillStyle=col;rr(-lw/2,0,lw,len,lw*.4);ctx.fill();ctx.fillStyle=shoe;ell(s*.02,len-s*.005,s*.07,s*.035);ctx.fill();ctx.restore()}}
+ else{for(const k of [-1,1]){const lift=Math.max(0,k*a)*s*.075,sh=lift*.6;const x=k<0?-s*.13:s*.03;ctx.fillStyle=col;rr(x,y0-lift,lw,len-sh,lw*.4);ctx.fill();ctx.fillStyle=shoe;ell(x+lw/2+k*s*.01,y0+len-sh-lift-s*.0,s*.07,s*.035*(1-lift/(s*.12)));ctx.fill()}}}
 function drawKelly(x,y,s,dir,walk,moving,pose,carry,time){
  ctx.save();ctx.translate(x,y);if(dir===2)ctx.scale(-1,1);
- const side=dir>=2,back=dir===1,ph=moving?Math.sin(walk*3.2):0,bob=moving?Math.abs(Math.cos(walk*3.2))*s*.03:0;
+ const amp=legAmp(LEGK,moving),side=dir>=2,back=dir===1,ph=Math.sin(walk*3.2)*amp,bob=Math.abs(Math.cos(walk*3.2))*s*.03*amp;
  ell(0,0,s*.3,s*.09,'rgba(0,0,0,.25)');
  ctx.translate(0,-bob);
  // legs
- ctx.fillStyle='#2a2a30';const lw=s*.1;
- if(side){rr(-lw/2+ph*s*.07,-s*.22,lw,s*.22,lw*.4);ctx.fill();rr(-lw/2-ph*s*.07,-s*.22,lw,s*.22,lw*.4);ctx.fill()}
- else{rr(-s*.13,-s*.22+Math.max(0,ph)*s*.03,lw,s*.2,lw*.4);ctx.fill();rr(s*.03,-s*.22+Math.max(0,-ph)*s*.03,lw,s*.2,lw*.4);ctx.fill()}
- ctx.fillStyle='#111';if(!side){ell(-s*.08,-s*.02,s*.07,s*.035);ctx.fill();ell(s*.08,-s*.02,s*.07,s*.035);ctx.fill()}else{ell(ph*s*.07+s*.02,-s*.02,s*.07,s*.035);ctx.fill()}
+ chefLegs(s,side,walk*3.2,amp,'#2a2a30','#111',s*.1,s*.21,-s*.22);
  const hy=-s*.9,hr=s*.26;
  // back hair mass (behind body)
  if(!back){ctx.fillStyle=HAIR;ell(side?-s*.08:0,hy+s*.12,s*.34,s*.34,HAIR);curls(side?-s*.3:-s*.3,hy+s*.08,s*.38,s*.09,4,side?-.1:-.15);if(!side)curls(s*.3,hy+s*.08,s*.38,s*.09,4,.15)}
@@ -885,9 +888,9 @@ function* botExt(){const P=G.P;let lastT=-1,spin=0;
 
 // sous chef sprite: white jacket, tall toque, comically round
 function drawSousChef(c,s,time){const x=KX+c.x*TS,y=KY+c.y*TS+TS*.28,L=c.look;ctx.save();ctx.translate(x,y);if(c.dir===2)ctx.scale(-1,1);
- const side=c.dir>=2,back=c.dir===1,ph=c.moving?Math.sin(c.walk*3.2):0,bob=c.moving?Math.abs(Math.cos(c.walk*3.2))*s*.035:0,wob=c.stun>0?Math.sin(time*20)*.15:0;
+ const amp=legAmp(c,c.moving),side=c.dir>=2,back=c.dir===1,ph=Math.sin(c.walk*3.2)*amp,bob=Math.abs(Math.cos(c.walk*3.2))*s*.035*amp,wob=c.stun>0?Math.sin(time*20)*.15:0;
  ell(0,0,s*.3,s*.09,'rgba(0,0,0,.25)');ctx.translate(0,-bob);ctx.rotate(wob);
- ctx.fillStyle='#2f3a55';rr(-s*.13,-s*.2+Math.max(0,ph)*s*.03,s*.1,s*.19,s*.04);ctx.fill();rr(s*.03,-s*.2+Math.max(0,-ph)*s*.03,s*.1,s*.19,s*.04);ctx.fill();
+ chefLegs(s,side,c.walk*3.2,amp,'#2f3a55','#1c2233',s*.1,s*.19,-s*.2);
  // round white jacket
  ell(0,-s*.4,s*.27,s*.24,'#fdfdfd');ctx.strokeStyle='#cfd5dc';ctx.lineWidth=Math.max(1,s*.02);ctx.stroke();
  if(!back&&!side){for(const by of [-.48,-.4,-.32])circ(s*.08,by*s,Math.max(.8,s*.022),'#c9ced6');ctx.fillStyle='#e8463a';ctx.beginPath();ctx.moveTo(-s*.1,-s*.62);ctx.lineTo(s*.1,-s*.62);ctx.lineTo(0,-s*.53);ctx.fill()}
