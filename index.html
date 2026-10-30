@@ -229,7 +229,7 @@ function moveP(dt,ix,iy){const P=G.P;const t=tileAt(Math.floor(P.x),Math.floor(P
   const cx=Math.floor(P.x)+.5,off=P.x-cx,sy=Math.sign(P.vy);
   if(!ice&&Math.abs(off)>.02&&Math.abs(off)<NUDGE&&Math.abs(iy)>.3&&!blockedAt(cx,P.y+sy*(R+.08)))P.x-=Math.sign(off)*Math.min(Math.abs(off),Math.abs(P.vy)*dt*1.1);
   ny=P.vy>0?Math.floor(ny+R)-R-.001:Math.floor(ny-R)+1+R+.001;P.vy=ice?-P.vy*.3:0}
- P.y=ny;const spd=Math.hypot(P.vx,P.vy);P.walk+=spd*dt*2.4;P.moving=spd>.4;
+ P.y=ny;const spd=Math.hypot(P.vx,P.vy);P.walk+=dt*Math.PI*cadSPS(spd)/3.2;P.moving=spd>.4;
  for(const c of G.sous){const dx=P.x-c.x,dy=P.y-c.y,d=Math.hypot(dx,dy);if(d<.56&&d>1e-4){const px=P.x+dx/d*(.56-d),py=P.y+dy/d*(.56-d);if(!blockedAt(px,P.y))P.x=px;if(!blockedAt(P.x,py))P.y=py}}
  // safety: never stuck inside a counter
  if(blockedAt(P.x,P.y))unstick()}
@@ -321,6 +321,14 @@ function face(x,y,r,side,blink){// side: 0 front, 1 right-facing
 /* leg rig (Grey Heart leg check, Oct 2026): legs swing/step with the walk phase, amplitude eases to standing when stopped */
 function legAmp(o,mv){const now=performance.now()/1000,dt=Math.min(.1,Math.max(0,now-(o._lt||now)));o._lt=now;o._la=(o._la||0)+((mv?1:0)-(o._la||0))*Math.min(1,dt*10);return o._la<.01?0:o._la}
 const LEGK={};
+/* cadence + arm rig (arm check, Oct 30 2026): steps/s from ground speed (walk ~1.5-2, run ~2.5-3), two-segment arms (upper arm + forearm, elbow bend) swing opposite the legs, ease to idle with the legs */
+function cadSPS(v){return v<.05?0:v<3?.62*v:Math.min(3,1.86+.6*(v-3))}
+function arm2(sx,sy,a,e,L1,L2,lw,col,hand,hr){const ex=sx+Math.sin(a)*L1,ey=sy+Math.cos(a)*L1,b=a+e,hx=ex+Math.sin(b)*L2,hy=ey+Math.cos(b)*L2;
+ ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.lineTo(hx,hy);if(col===JACKET){ctx.strokeStyle='#585866';ctx.lineWidth=lw+Math.max(1,lw*.25);ctx.stroke()}ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();circ(hx,hy,hr,hand)}
+/* walking arms: side = near arm swings fore/aft opposite the near leg, elbow bends more on the forward swing; front/back = hands rise and elbows flare on the forward swing (foreshortened) */
+function walkArms(s,side,back,wph,amp,sy,col,hand,spread){const sw=Math.sin(wph)*amp,L1=s*.15,L2=s*.14,lw=s*.1,hr=s*.055;
+ if(side){const a=-sw*.62,e=.18*amp+.55*Math.max(0,-sw)+.12*Math.max(0,sw);arm2(0,sy,a,e,L1,L2,lw,col,hand,hr);return}
+ for(const k of [-1,1]){const f=-k*sw,fw=Math.max(0,f);const a=k*(.12+.3*fw),e=-k*(.08+.95*fw);arm2(k*spread,sy,a,e,L1*(1-.12*fw),L2*(1-.3*fw),lw,col,hand,hr)}}
 function chefLegs(s,side,ph,amp,col,shoe,lw,len,y0){const a=Math.sin(ph)*amp,c=Math.cos(ph)*amp;
  if(side){for(const k of [-1,1]){const ang=k*a*.55,lift=Math.max(0,k*c)*s*.035;ctx.save();ctx.translate(0,y0-lift);ctx.rotate(-ang);ctx.fillStyle=col;rr(-lw/2,0,lw,len,lw*.4);ctx.fill();ctx.fillStyle=shoe;ell(s*.02,len-s*.005,s*.07,s*.035);ctx.fill();ctx.restore()}}
  else{for(const k of [-1,1]){const lift=Math.max(0,k*a)*s*.075,sh=lift*.6;const x=k<0?-s*.13:s*.03;ctx.fillStyle=col;rr(x,y0-lift,lw,len-sh,lw*.4);ctx.fill();ctx.fillStyle=shoe;ell(x+lw/2+k*s*.01,y0+len-sh-lift-s*.0,s*.07,s*.035*(1-lift/(s*.12)));ctx.fill()}}}
@@ -349,12 +357,12 @@ function drawKelly(x,y,s,dir,walk,moving,pose,carry,time){
  const armY=-s*.6;ctx.lineCap='round';
  const arm=(ax,hx,hy2)=>{ctx.strokeStyle=JACKET;ctx.lineWidth=s*.1;ctx.beginPath();ctx.moveTo(ax,armY);ctx.lineTo(hx,hy2);ctx.stroke();circ(hx,hy2,s*.055,SKIN)};
  const chopUp=pose===1?Math.abs(Math.sin(time*14))*s*.16:0,spr=pose===2,wash=pose===3?Math.sin(time*10)*s*.05:0;
- if(back){if(carry||pose)arm(-s*.22,-s*.16,-s*.5),arm(s*.22,s*.16,-s*.5);else{arm(-s*.24,-s*.27-ph*s*.03,-s*.34);arm(s*.24,s*.27+ph*s*.03,-s*.34)}}
- else if(side){if(carry||pose)arm(0,s*.3+wash,-s*.46-chopUp);else arm(0,-ph*s*.1,-s*.34);
+ if(back){if(carry||pose)arm(-s*.22,-s*.16,-s*.5),arm(s*.22,s*.16,-s*.5);else walkArms(s,0,1,walk*3.2,amp,armY,JACKET,SKIN,s*.23)}
+ else if(side){if(carry||pose)arm(0,s*.3+wash,-s*.46-chopUp);else walkArms(s,1,0,walk*3.2,amp,armY,JACKET,SKIN,0);
   if(pose===1){ctx.strokeStyle='#cfd6dd';ctx.lineWidth=s*.05;ctx.beginPath();ctx.moveTo(s*.32,-s*.46-chopUp);ctx.lineTo(s*.48,-s*.4-chopUp);ctx.stroke()}}
  else{if(carry||pose===2||pose===3){arm(-s*.22,-s*.13+wash,-s*.42);arm(s*.22,s*.13-wash,-s*.42)}
   else if(pose===1){arm(-s*.22,-s*.2,-s*.38);arm(s*.22,s*.17,-s*.44-chopUp);ctx.strokeStyle='#cfd6dd';ctx.lineWidth=s*.045;ctx.beginPath();ctx.moveTo(s*.17,-s*.44-chopUp);ctx.lineTo(s*.32,-s*.5-chopUp);ctx.stroke()}
-  else{arm(-s*.24,-s*.27,-s*.34+ph*s*.03);arm(s*.24,s*.27,-s*.34-ph*s*.03)}}
+  else walkArms(s,0,0,walk*3.2,amp,armY,JACKET,SKIN,s*.23)}
  // head
  if(back){ell(0,hy+s*.02,s*.31,s*.3,HAIR);curls(-s*.2,hy+s*.1,s*.4,s*.1,4,-.1);curls(0,hy+s*.16,s*.36,s*.1,4,0);curls(s*.2,hy+s*.1,s*.4,s*.1,4,.1);
   ctx.strokeStyle=HAIR_D;ctx.lineWidth=Math.max(.6,s*.02);ctx.beginPath();ctx.moveTo(0,hy-s*.28);ctx.lineTo(0,hy-s*.05);ctx.stroke()}
@@ -549,7 +557,7 @@ function sousStep(c,tx,ty,dt){// move toward tile center, blocked by Kelly
  if(d<1e-3)return true;const nx=c.x+dx/d*Math.min(sp,d),ny=c.y+dy/d*Math.min(sp,d);
  {const nd=Math.hypot(nx-P.x,ny-P.y);if(nd<.55&&nd<=Math.hypot(c.x-P.x,c.y-P.y)&&!c.bump){c.moving=false;c.blockT=(c.blockT||0)+dt;return false}}
  if(c.bump&&Math.hypot(nx-P.x,ny-P.y)<.6){P.vx+=dx/d*5;P.vy+=dy/d*5;if(!c.bumped){c.bumped=1;say(c,'Coming through!');sfx('bonk')}}
- c.x=nx;c.y=ny;c.walk+=sp*2.4;c.moving=true;c.blockT=0;if(Math.abs(dx)>Math.abs(dy))c.dir=dx<0?2:3;else c.dir=dy<0?1:0;return Math.hypot(cx-c.x,cy-c.y)<.02}
+ c.x=nx;c.y=ny;c.walk+=dt*Math.PI*cadSPS(2.9)/3.2;c.moving=true;c.blockT=0;if(Math.abs(dx)>Math.abs(dy))c.dir=dx<0?2:3;else c.dir=dy<0?1:0;return Math.hypot(cx-c.x,cy-c.y)<.02}
 function* goTo(c,t,maxT){let tEnd=G.t+(maxT||12),waited=0;let stuck=0;
  while(G.t<tEnd){if(c.stun>0){c.moving=false;yield;continue}
   const st0=stands(t);if(!st0.length)return false;const tx=Math.floor(c.x),ty=Math.floor(c.y),kx=Math.floor(G.P.x),ky=Math.floor(G.P.y);
@@ -896,7 +904,7 @@ function drawSousChef(c,s,time){const x=KX+c.x*TS,y=KY+c.y*TS+TS*.28,L=c.look;ct
  if(!back&&!side){for(const by of [-.48,-.4,-.32])circ(s*.08,by*s,Math.max(.8,s*.022),'#c9ced6');ctx.fillStyle='#e8463a';ctx.beginPath();ctx.moveTo(-s*.1,-s*.62);ctx.lineTo(s*.1,-s*.62);ctx.lineTo(0,-s*.53);ctx.fill()}
  ctx.lineCap='round';const arm=(ax,hx,hy)=>{ctx.strokeStyle='#fdfdfd';ctx.lineWidth=s*.1;ctx.beginPath();ctx.moveTo(ax,-s*.52);ctx.lineTo(hx,hy);ctx.stroke();circ(hx,hy,s*.055,L.skin)};
  const chopUp=c.act===1?Math.abs(Math.sin(time*14))*s*.15:0;
- if(c.hold||c.act){if(side)arm(0,s*.3,-s*.44-chopUp);else{arm(-s*.22,-s*.13,-s*.42);arm(s*.22,s*.13,-s*.42-chopUp)}}else{if(side)arm(0,-ph*s*.1,-s*.32);else{arm(-s*.25,-s*.29,-s*.3+ph*s*.03);arm(s*.25,s*.29,-s*.3-ph*s*.03)}}
+ if(c.hold||c.act){if(side)arm(0,s*.3,-s*.44-chopUp);else{arm(-s*.22,-s*.13,-s*.42);arm(s*.22,s*.13,-s*.42-chopUp)}}else{if(side)walkArms(s,1,0,c.walk*3.2,amp,-s*.52,'#fdfdfd',L.skin,0);else walkArms(s,0,back,c.walk*3.2,amp,-s*.52,'#fdfdfd',L.skin,s*.24)}
  // head
  const hy=-s*.82,hr=s*.22;
  if(back){circ(0,hy,hr,L.hair)}else{circ(side?s*.03:0,hy,hr,L.skin);const ex=side?[s*.12]:[-s*.08,s*.08];for(const e of ex){circ(e,hy-s*.02,Math.max(1,s*.035),'#1d1d1d')}
@@ -1088,7 +1096,7 @@ function car_hop(G,c){const P=G.P;let ux=c.x-P.x,uy=c.y-P.y;const d=Math.hypot(u
  for(const k of [1,1.5,2]){const x=Math.floor(P.x-ux*k),y=Math.floor(P.y-uy*k);if(walkable(tileAt(x,y))&&!occ(x,y)&&Math.hypot(x+.5-P.x,y+.5-P.y)>.62){tgt={x,y};break}}
  if(!tgt)return false;const a0=Math.atan2(uy,ux),side=(Math.floor(G.t*7)%2)?1:-1,R=Math.max(.64,d);c.idle=null;c.task='tidy';c.bump=0;
  say(c,['Squeeze by!','Hop!','Behind you, Chef!'][c.i%3]);
- c.gen=(function*(){let k=0;const N=Math.max(6,Math.round(.3/(G.dt||1/60)));for(k=1;k<=N;k++){const a=a0+side*Math.PI*k/N;c.x=G.P.x+Math.cos(a)*R;c.y=G.P.y+Math.sin(a)*R;c.moving=true;c.walk+=.2;yield}
+ c.gen=(function*(){let k=0;const N=Math.max(6,Math.round(.3/(G.dt||1/60)));for(k=1;k<=N;k++){const a=a0+side*Math.PI*k/N;c.x=G.P.x+Math.cos(a)*R;c.y=G.P.y+Math.sin(a)*R;c.moving=true;c.walk+=(1/60)*Math.PI*cadSPS(2.9)/3.2;yield}
   let n=0;while(!sousStep(c,tgt.x,tgt.y,G.dt)&&n++<120)yield;c.moving=false})();return true}
 function car_unblock(G,dt){const P=G.P,v=Math.hypot(P.vx||0,P.vy||0);for(const c of G.sous){if(c.gen||c.task||c.stun>0){c.car_b=0;c.car_p=0;continue}
  const dx=c.x-P.x,dy=c.y-P.y,d=Math.hypot(dx,dy);
